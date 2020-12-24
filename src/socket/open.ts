@@ -2,18 +2,36 @@ import _debug from "debug";
 
 import { ICredentials } from "../credentials/model";
 import { IDiscoveredDevice, INetworkConfig } from "../discovery/model";
-import { formatDiscoveryMessage } from "../protocol";
+import { DiscoveryVersions, formatDiscoveryMessage } from "../protocol";
 import { delayMillis } from "../util/async";
 import { IWakerNetwork, IWakerNetworkFactory } from "../waker/model";
 
-import { defaultSocketConfig, ISocketConfig } from "./model";
+import { defaultSocketConfig, IDeviceSocket, ISocketConfig } from "./model";
+import { TcpDeviceSocket } from "./tcp";
 
 const debug = _debug("playground:socket:open");
+
+function openConnection(
+    device: IDiscoveredDevice,
+    config: ISocketConfig,
+): Promise<IDeviceSocket> {
+    switch (device.discoveryVersion) {
+        case DiscoveryVersions.PS4:
+            return TcpDeviceSocket.connectTo(
+                device,
+                config,
+            );
+
+        default:
+            throw new Error(`Unsupported protocol: ${device.discoveryVersion}`);
+    }
+}
 
 async function attemptOpen(
     waker: IWakerNetwork,
     device: IDiscoveredDevice,
     credentials: ICredentials,
+    config: ISocketConfig,
 ) {
     // send some packets to make sure the device is willing to accept our
     // TCP connection
@@ -32,8 +50,11 @@ async function attemptOpen(
     await delayMillis(250);
     waker.close();
 
-    // TODO socket connection
-    return true;
+    const socket = await openConnection(device, config);
+
+    // TODO login protocol
+
+    return socket;
 }
 
 function isRetryable(error: any) {
@@ -61,6 +82,7 @@ export async function openSocket(
                 waker,
                 device,
                 credentials,
+                mySocketConfig,
             );
         } catch (e) {
             if (isRetryable(e) && i + 1 !== mySocketConfig.maxRetries) {
