@@ -9,11 +9,11 @@ import {
     IDeviceProtocol,
     IDeviceSocket,
     IPacket,
-    IPacketEncoder,
+    IPacketCodec,
     IPacketReader,
     ISocketConfig,
     PacketReadState,
-    PlaintextEncoder,
+    PlaintextCodec,
 } from "./model";
 import { DeviceProtocolV1 } from "./protocol/v1";
 
@@ -61,7 +61,7 @@ export class TcpDeviceSocket implements IDeviceSocket {
     }
 
     private readonly receivers: CancellableAsyncSink<IPacket>[] = [];
-    private encoder: IPacketEncoder = PlaintextEncoder;
+    private codec: IPacketCodec = PlaintextCodec;
 
     private reader?: IPacketReader;
 
@@ -102,7 +102,7 @@ export class TcpDeviceSocket implements IDeviceSocket {
 
     public send(packet: IPacket) {
         const buffer = packet.toBuffer();
-        const encoded = this.encoder.encode(buffer);
+        const encoded = this.codec.encode(buffer);
 
         if (encoded === buffer) {
             debug(">>", packet, "(", buffer, ")");
@@ -118,9 +118,9 @@ export class TcpDeviceSocket implements IDeviceSocket {
         });
     }
 
-    public setEncoder(encoder: IPacketEncoder) {
-        debug("switch to encoder:", encoder);
-        this.encoder = encoder;
+    public setCodec(codec: IPacketCodec) {
+        debug("switch to codec:", codec);
+        this.codec = codec;
     }
 
     public async close() {
@@ -148,7 +148,7 @@ export class TcpDeviceSocket implements IDeviceSocket {
     }
 
     private dispatchNewPacket(reader: IPacketReader) {
-        const packet = reader.get();
+        const packet = reader.get(this.codec);
         const remainder = reader.remainder();
 
         for (const receiver of this.receivers) {

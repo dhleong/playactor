@@ -17,12 +17,16 @@ export interface IPacket {
     toBuffer(): Buffer;
 }
 
-export interface IPacketEncoder {
+export interface IPacketCodec {
     encode(packet: Buffer): Buffer;
+    decode(packet: Buffer): Buffer;
 }
 
-export const PlaintextEncoder: IPacketEncoder = {
+export const PlaintextCodec: IPacketCodec = {
     encode(packet: Buffer) {
+        return packet;
+    },
+    decode(packet: Buffer) {
         return packet;
     },
 };
@@ -34,7 +38,7 @@ export enum PacketReadState {
 
 export interface IPacketReader {
     read(data: Buffer): PacketReadState;
-    get(): IPacket;
+    get(codec: IPacketCodec): IPacket;
     remainder(): Buffer | undefined;
 }
 
@@ -52,7 +56,7 @@ export interface IDeviceSocket {
     close(): Promise<void>;
     receive(): AsyncIterable<IPacket>;
     send(packet: IPacket): Promise<void>;
-    setEncoder(encoder: IPacketEncoder): void;
+    setCodec(encoder: IPacketCodec): void;
 }
 
 export interface IDeviceProc {

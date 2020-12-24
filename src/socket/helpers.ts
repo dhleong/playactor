@@ -13,6 +13,9 @@ export async function receiveWhere(
     throw new Error("Did not receive packet");
 }
 
-export async function receiveType(socket: IDeviceSocket, type: number) {
-    return receiveWhere(socket, packet => packet.type === type);
+export async function receiveType<T extends IPacket>(
+    socket: IDeviceSocket,
+    type: number,
+) {
+    return await receiveWhere(socket, packet => packet.type === type) as T;
 }
