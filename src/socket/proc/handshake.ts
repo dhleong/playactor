@@ -40,9 +40,14 @@ export class HandshakeProc implements IDeviceProc {
         socket.setCodec(crypto);
 
         // sign our "random key" with the public key
-        const publicKey = new NodeRSA(PUBLIC_KEY, "pkcs8-public");
-        const key = publicKey.encrypt(crypto.seed);
+        const key = this.signWithPublicKey(crypto.seed);
 
         await socket.send(new HandshakePacket(key, greeting.seed));
+    }
+
+    // public for testing
+    public signWithPublicKey(bytes: Buffer) {
+        const publicKey = new NodeRSA(PUBLIC_KEY, "pkcs8-public");
+        return publicKey.encrypt(bytes);
     }
 }
