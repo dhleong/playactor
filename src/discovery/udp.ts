@@ -59,6 +59,31 @@ class UdpSocketManager {
     }
 }
 
+export class UdpDiscoveryNetwork implements IDiscoveryNetwork {
+    constructor(
+        private readonly socketManager: UdpSocketManager,
+        private readonly boundPort: number,
+        private readonly socket: dgram.Socket,
+        private readonly port: number,
+        private readonly version: DiscoveryVersion,
+    ) {}
+
+    public close() {
+        debug("closing udp network");
+        this.socketManager.release(this.boundPort);
+    }
+
+    public async ping() {
+        const message = formatDiscoveryMessage({
+            type: "SRCH",
+            version: this.version,
+        });
+
+        debug("broadcast ping:", message);
+        this.socket.send(message, this.port, BROADCAST_ADDRESS);
+    }
+}
+
 const singletonUdpSocketManager = new UdpSocketManager();
 
 export class UdpDiscoveryNetworkFactory implements IDiscoveryNetworkFactory {
@@ -101,30 +126,5 @@ export class UdpDiscoveryNetworkFactory implements IDiscoveryNetworkFactory {
             this.port,
             this.version,
         );
-    }
-}
-
-export class UdpDiscoveryNetwork implements IDiscoveryNetwork {
-    constructor(
-        private readonly socketManager: UdpSocketManager,
-        private readonly boundPort: number,
-        private readonly socket: dgram.Socket,
-        private readonly port: number,
-        private readonly version: DiscoveryVersion,
-    ) {}
-
-    public close() {
-        debug("closing udp network");
-        this.socketManager.release(this.boundPort);
-    }
-
-    public async ping() {
-        const message = formatDiscoveryMessage({
-            type: "SRCH",
-            version: this.version,
-        })
-
-        debug("broadcast ping:", message);
-        this.socket.send(message, this.port, BROADCAST_ADDRESS);
     }
 }

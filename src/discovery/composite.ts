@@ -12,6 +12,6 @@ export class CompositeDiscoveryNetwork implements IDiscoveryNetwork {
     }
 
     public async ping() {
-        await Promise.all(this.delegates.map(d => d.ping()))
+        await Promise.all(this.delegates.map(d => d.ping()));
     }
 }

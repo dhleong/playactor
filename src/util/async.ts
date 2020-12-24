@@ -19,7 +19,7 @@ export class CancellableAsyncSink<T> implements AsyncIterator<T>, AsyncIterable<
     }
 
     public async return(value: T) {
-        const onCancel = this.onCancel;
+        const { onCancel } = this;
         if (onCancel) onCancel();
 
         return {

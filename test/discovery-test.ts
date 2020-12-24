@@ -7,13 +7,18 @@ import { IDiscoveryNetwork } from "../src/discovery/model";
 chai.should();
 
 class MockNetwork implements IDiscoveryNetwork {
-    close() {
+    public close() {
         // nop
     }
 
-    async ping(): Promise<void> {
+    public async ping(): Promise<void> {
         // nop
     }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function ignore(v: any) {
+    // nop
 }
 
 describe("Discovery", () => {
@@ -38,8 +43,8 @@ describe("Discovery", () => {
         it("stops iterating on timeout", async () => {
             const state = { done: false };
             const promise = (async () => {
-                for await (const _ of discovery.discover()) {
-                    // ignore
+                for await (const device of discovery.discover()) {
+                    ignore(device);
                 }
                 state.done = true;
             })();

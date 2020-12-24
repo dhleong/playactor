@@ -15,13 +15,12 @@ const standardFactories = [
 ];
 
 export const StandardDiscoveryNetworkFactory: IDiscoveryNetworkFactory = {
-
     create(
         config: INetworkConfig,
         onDevice: OnDeviceDiscoveredHandler,
     ): IDiscoveryNetwork {
-        return new CompositeDiscoveryNetwork(standardFactories.map(factory =>
-            factory.create(config, onDevice),
-        ));
-    }
-}
+        return new CompositeDiscoveryNetwork(
+            standardFactories.map(factory => factory.create(config, onDevice)),
+        );
+    },
+};
