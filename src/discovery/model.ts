@@ -15,11 +15,16 @@ export interface INetworkConfig {
     localBindPort?: number;
 }
 
+export enum DeviceStatus {
+    STANDBY,
+    AWAKE,
+}
+
 export interface IDiscoveredDevice {
     address: string;
     discoveryVersion: DiscoveryVersion;
     id: string;
-    status: string; // TODO
+    status: DeviceStatus;
 }
 
 export type OnDeviceDiscoveredHandler = (device: IDiscoveredDevice) => void;

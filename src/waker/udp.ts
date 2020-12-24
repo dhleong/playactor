@@ -6,6 +6,10 @@ export class UdpWakerNetwork implements IWakerNetwork {
         public readonly config: INetworkConfig,
     ) {}
 
+    public close() {
+        // TODO
+    }
+
     public async sendTo(device: IDiscoveredDevice, message: Buffer) {
         throw new Error(`Method not implemented: ${device}:${message}`);
     }

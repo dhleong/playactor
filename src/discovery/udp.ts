@@ -4,6 +4,7 @@ import dgram from "dgram";
 import { DiscoveryVersion, formatDiscoveryMessage } from "../protocol";
 
 import {
+    DeviceStatus,
     IDiscoveryNetwork,
     IDiscoveryNetworkFactory,
     INetworkConfig,
@@ -105,7 +106,7 @@ export class UdpDiscoveryNetworkFactory implements IDiscoveryNetworkFactory {
                 address: rinfo.address,
                 discoveryVersion: this.version,
                 id: "", // TODO
-                status: "Standby", // TODO
+                status: DeviceStatus.STANDBY, // TODO
             });
         });
 
