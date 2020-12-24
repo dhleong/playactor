@@ -103,6 +103,9 @@ export class UdpDiscoveryNetworkFactory implements IDiscoveryNetworkFactory {
         socket.on("message", (message, rinfo) => {
             onDevice({
                 address: rinfo.address,
+                discoveryVersion: this.version,
+                id: "", // TODO
+                status: "Standby", // TODO
             });
         });
 

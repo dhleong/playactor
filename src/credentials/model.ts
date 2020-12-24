@@ -9,8 +9,8 @@ export interface ICredentials {
 }
 
 export interface ICredentialStorage {
-    read(deviceSerial: string): Promise<ICredentials | null>;
-    write(deviceSerial: string, credentials: ICredentials): Promise<void>;
+    read(deviceId: string): Promise<ICredentials | null>;
+    write(deviceId: string, credentials: ICredentials): Promise<void>;
 }
 
 export interface ICredentialRequester {

@@ -13,12 +13,11 @@ export class CredentialManager {
     ) {}
 
     public async getForDevice(device: IDiscoveredDevice) {
-        const serial = device.address; // TODO
-        const existing = await this.storage.read(serial);
+        const existing = await this.storage.read(device.id);
         if (existing) return existing;
 
         const fromRequest = await this.requester.requestForDevice(device);
-        await this.storage.write(serial, fromRequest);
+        await this.storage.write(device.id, fromRequest);
         return fromRequest;
     }
 }

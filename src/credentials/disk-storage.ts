@@ -13,20 +13,20 @@ export class DiskCredentialsStorage implements ICredentialStorage {
         public readonly filePath: string = determineDefaultFile(),
     ) {}
 
-    public async read(deviceSerial: string): Promise<ICredentials | null> {
+    public async read(deviceId: string): Promise<ICredentials | null> {
         const json = await this.readCredentialsMap();
-        return json[deviceSerial] ?? null;
+        return json[deviceId] ?? null;
     }
 
     public async write(
-        deviceSerial: string,
+        deviceId: string,
         credentials: ICredentials,
     ) {
         // NOTE: this is not perfectly safe, but should be *mostly* okay...
         // if we run into a situation where concurrency is an issue, we can
         // set up locks
         const json = await this.readCredentialsMap();
-        json[deviceSerial] = credentials;
+        json[deviceId] = credentials;
 
         await fs.writeFile(this.filePath, JSON.stringify(json));
     }

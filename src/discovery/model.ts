@@ -1,3 +1,5 @@
+import { DiscoveryVersion } from "../protocol";
+
 export interface IDiscoveryConfig {
     pingIntervalMillis: number;
     timeoutMillis: number;
@@ -15,6 +17,9 @@ export interface INetworkConfig {
 
 export interface IDiscoveredDevice {
     address: string;
+    discoveryVersion: DiscoveryVersion;
+    id: string;
+    status: string; // TODO
 }
 
 export type OnDeviceDiscoveredHandler = (device: IDiscoveredDevice) => void;
