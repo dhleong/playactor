@@ -22,6 +22,8 @@ export enum DeviceStatus {
 
 export interface IDiscoveredDevice {
     address: string;
+    port: number;
+
     discoveryVersion: DiscoveryVersion;
     id: string;
     status: DeviceStatus;
