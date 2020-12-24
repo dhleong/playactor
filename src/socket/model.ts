@@ -39,6 +39,7 @@ export interface IPacketReader {
 }
 
 export interface IDeviceProtocol {
+    version: number;
     createPacketReader(): IPacketReader;
 }
 
@@ -46,8 +47,14 @@ export interface IDeviceProtocol {
  * Represents a persistent, low-level connection to a device
  */
 export interface IDeviceSocket {
+    protocolVersion: number;
+
     close(): Promise<void>;
     receive(): AsyncIterable<IPacket>;
     send(packet: IPacket): Promise<void>;
     setEncoder(encoder: IPacketEncoder): void;
+}
+
+export interface IDeviceProc {
+    perform(socket: IDeviceSocket): Promise<void>;
 }

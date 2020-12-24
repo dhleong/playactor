@@ -83,6 +83,10 @@ export class TcpDeviceSocket implements IDeviceSocket {
         stream.on("data", data => this.onDataReceived(data));
     }
 
+    public get protocolVersion() {
+        return this.protocol.version;
+    }
+
     public receive(): AsyncIterable<IPacket> {
         const receiver = new CancellableAsyncSink<IPacket>();
         receiver.onCancel = () => {

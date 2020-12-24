@@ -7,6 +7,7 @@ import { delayMillis } from "../util/async";
 import { IWakerNetwork, IWakerNetworkFactory } from "../waker/model";
 
 import { defaultSocketConfig, IDeviceSocket, ISocketConfig } from "./model";
+import { HandshakeProc } from "./proc/handshake";
 import { TcpDeviceSocket } from "./tcp";
 
 const debug = _debug("playground:socket:open");
@@ -51,6 +52,8 @@ async function attemptOpen(
     waker.close();
 
     const socket = await openConnection(device, config);
+
+    await new HandshakeProc().perform(socket);
 
     // TODO login protocol
 
