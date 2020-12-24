@@ -82,3 +82,27 @@ export class Waker {
         throw new Error("Device didn't wake in time");
     }
 }
+
+export interface IWakerFactory {
+    create(): Waker;
+}
+
+export class SimpleWakerFactory implements IWakerFactory {
+    constructor(
+        private readonly config: {
+            credentials: CredentialManager,
+            discoveryConfig: Partial<IDiscoveryConfig>,
+            networkFactory: IWakerNetworkFactory,
+            discoveryFactory: IDiscoveryNetworkFactory,
+        },
+    ) {}
+
+    public create(): Waker {
+        return new Waker(
+            this.config.credentials,
+            this.config.discoveryConfig,
+            this.config.networkFactory,
+            this.config.discoveryFactory,
+        );
+    }
+}
