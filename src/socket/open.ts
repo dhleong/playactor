@@ -8,6 +8,7 @@ import { IWakerNetwork, IWakerNetworkFactory } from "../waker/model";
 
 import { defaultSocketConfig, IDeviceSocket, ISocketConfig } from "./model";
 import { HandshakeProc } from "./proc/handshake";
+import { LoginProc } from "./proc/login";
 import { TcpDeviceSocket } from "./tcp";
 
 const debug = _debug("playground:socket:open");
@@ -55,7 +56,9 @@ async function attemptOpen(
 
     await new HandshakeProc().perform(socket);
 
-    // TODO login protocol
+    await new LoginProc(
+        credentials,
+    ).perform(socket);
 
     return socket;
 }
