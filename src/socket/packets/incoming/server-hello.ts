@@ -1,5 +1,5 @@
-import { IncomingPacket } from "./base";
-import { PacketType } from "./types";
+import { IncomingPacket } from "../base";
+import { PacketType } from "../types";
 
 export class ServerHelloPacket extends IncomingPacket {
     public type = PacketType.Hello;

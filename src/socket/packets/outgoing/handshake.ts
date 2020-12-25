@@ -1,14 +1,17 @@
-import { IPacket } from "../model";
-import { PacketBuilder } from "./builder";
-import { PacketType } from "./types";
+import { OutgoingPacket } from "../base";
+import { PacketBuilder } from "../builder";
+import { PacketType } from "../types";
 
-export class HandshakePacket implements IPacket {
+export class HandshakePacket extends OutgoingPacket {
     public type = PacketType.Handshake;
+    public totalLength = 280;
 
     constructor(
         private readonly key: Buffer,
         private readonly seed: Buffer,
     ) {
+        super();
+
         if (key.length !== 256) {
             throw new Error(`Key is wrong size (was ${key.length})`);
         }
@@ -17,11 +20,9 @@ export class HandshakePacket implements IPacket {
         }
     }
 
-    public toBuffer(): Buffer {
-        return new PacketBuilder(276)
-            .writeInt(this.type)
+    public fillBuffer(builder: PacketBuilder) {
+        builder
             .write(this.key)
-            .write(this.seed)
-            .build();
+            .write(this.seed);
     }
 }

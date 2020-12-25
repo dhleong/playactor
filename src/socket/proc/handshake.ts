@@ -4,9 +4,9 @@ import NodeRSA from "node-rsa";
 import { CryptoCodec } from "../crypto-codec";
 import { receiveType } from "../helpers";
 import { IDeviceProc, IDeviceSocket } from "../model";
-import { ClientHelloPacket } from "../packets/client-hello";
-import { HandshakePacket } from "../packets/handshake";
-import { ServerHelloPacket } from "../packets/server-hello";
+import { ClientHelloPacket } from "../packets/outgoing/client-hello";
+import { HandshakePacket } from "../packets/outgoing/handshake";
+import { ServerHelloPacket } from "../packets/incoming/server-hello";
 import { PacketType } from "../packets/types";
 
 const debug = _debug("playground:proc:handshake");

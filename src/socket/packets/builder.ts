@@ -5,7 +5,7 @@ export class PacketBuilder {
     private offset = 0;
 
     constructor(length: number) {
-        this.buffer = Buffer.alloc(length + intLength, 0);
+        this.buffer = Buffer.alloc(length, 0);
         this.writeInt(length);
     }
 
