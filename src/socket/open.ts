@@ -54,11 +54,8 @@ async function attemptOpen(
 
     const socket = await openConnection(device, config);
 
-    await new HandshakeProc().perform(socket);
-
-    await new LoginProc(
-        credentials,
-    ).perform(socket);
+    await socket.execute(new HandshakeProc());
+    await socket.execute(new LoginProc(credentials));
 
     return socket;
 }

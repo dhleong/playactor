@@ -6,6 +6,7 @@ import { DiscoveryVersions } from "../protocol";
 import { CancellableAsyncSink } from "../util/async";
 
 import {
+    IDeviceProc,
     IDeviceProtocol,
     IDeviceSocket,
     IPacket,
@@ -85,6 +86,10 @@ export class TcpDeviceSocket implements IDeviceSocket {
 
     public get protocolVersion() {
         return this.protocol.version;
+    }
+
+    public execute<R>(proc: IDeviceProc<R>): Promise<R> {
+        return proc.perform(this);
     }
 
     public receive(): AsyncIterable<IPacket> {

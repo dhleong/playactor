@@ -57,8 +57,10 @@ export interface IDeviceSocket {
     receive(): AsyncIterable<IPacket>;
     send(packet: IPacket): Promise<void>;
     setCodec(encoder: IPacketCodec): void;
+
+    execute<R = void>(proc: IDeviceProc<R>): Promise<R>;
 }
 
-export interface IDeviceProc {
-    perform(socket: IDeviceSocket): Promise<void>;
+export interface IDeviceProc<R = void> {
+    perform(socket: IDeviceSocket): Promise<R>;
 }
