@@ -1,3 +1,5 @@
+import { ICredentials } from "./credentials/model";
+
 export const DiscoveryVersions = {
     PS4: "00020020",
     PS5: "00030010",
@@ -10,13 +12,13 @@ export function formatDiscoveryMessage({
     type,
     version,
 }: {
-    data?: Record<string, unknown>,
+    data?: Record<string, unknown> | ICredentials,
     type: string,
     version: DiscoveryVersion,
 }) {
     const formatted = data
         ? Object.keys(data).reduce(
-            (last, key) => `${last}${key}:${data[key]}\n`,
+            (last, key) => `${last}${key}:${(data as any)[key]}\n`,
             "",
         ) : "";
 
