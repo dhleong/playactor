@@ -1,4 +1,4 @@
-import { IncomingPacket } from "../base";
+import { IncomingResultPacket } from "../base";
 import { PacketType } from "../types";
 
 const resultToErrorCode: {[result: number]: string} = {
@@ -8,19 +8,10 @@ const resultToErrorCode: {[result: number]: string} = {
     30: "LOGIN_MGR_BUSY",
 };
 
-export class LoginResultPacket extends IncomingPacket {
+export class LoginResultPacket extends IncomingResultPacket {
     public type = PacketType.LoginResult;
 
-    public readonly result: number;
-
-    public readonly errorCode?: string;
-
     constructor(data: Buffer) {
-        super();
-
-        this.result = data.readInt32LE(8);
-        if (this.result !== 0) {
-            this.errorCode = resultToErrorCode[this.result] ?? "UNKNOWN";
-        }
+        super(data, resultToErrorCode);
     }
 }

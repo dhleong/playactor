@@ -100,4 +100,6 @@ export async function openSocket(
             }
         }
     }
+
+    throw new Error("Failed to open a connection");
 }

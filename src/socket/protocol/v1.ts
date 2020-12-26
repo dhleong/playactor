@@ -5,7 +5,9 @@ import {
     IPacketReader,
     PacketReadState,
 } from "../model";
+import { LoginResultPacket } from "../packets/incoming/login-result";
 import { ServerHelloPacket } from "../packets/incoming/server-hello";
+import { StandbyResultPacket } from "../packets/incoming/standby-result";
 import { PacketType } from "../packets/types";
 import { LengthDelimitedBufferReader } from "./base";
 
@@ -16,6 +18,8 @@ interface PacketConstructor {
 }
 const packets: {[key: number]: PacketConstructor} = {
     [PacketType.Hello]: ServerHelloPacket,
+    [PacketType.LoginResult]: LoginResultPacket,
+    [PacketType.StandbyResult]: StandbyResultPacket,
 };
 
 export class PacketReaderV1 implements IPacketReader {

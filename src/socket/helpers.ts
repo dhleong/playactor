@@ -1,4 +1,5 @@
 import { IDeviceSocket, IPacket } from "./model";
+import { IncomingResultPacket } from "./packets/base";
 
 export async function receiveWhere(
     socket: IDeviceSocket,
@@ -18,4 +19,33 @@ export async function receiveType<T extends IPacket>(
     type: number,
 ) {
     return await receiveWhere(socket, packet => packet.type === type) as T;
+}
+
+export class RpcError extends Error {
+    constructor(
+        public readonly result: number,
+        public readonly code: string,
+    ) {
+        super(`Error[${result}] ${code}`);
+    }
+}
+
+export async function performRpc<R extends IncomingResultPacket>(
+    socket: IDeviceSocket,
+    request: IPacket,
+    resultType: number,
+) {
+    await socket.send(request);
+
+    const resultPacket = await receiveType<R>(
+        socket,
+        resultType,
+    );
+
+    const { errorCode, result } = resultPacket;
+    if (errorCode) {
+        throw new RpcError(result, errorCode);
+    }
+
+    return resultPacket;
 }

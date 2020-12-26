@@ -1,5 +1,5 @@
 import { ICredentials } from "../../credentials/model";
-import { receiveType } from "../helpers";
+import { performRpc } from "../helpers";
 import { IDeviceProc, IDeviceSocket } from "../model";
 import { LoginResultPacket } from "../packets/incoming/login-result";
 import { ILoginConfig, LoginPacket } from "../packets/outgoing/login";
@@ -21,21 +21,17 @@ export class LoginProc implements IDeviceProc {
     ) {}
 
     public async perform(socket: IDeviceSocket) {
-        await socket.send(new LoginPacket(
-            socket.protocolVersion,
-            this.credentials["user-credential"],
-            this.config,
-        ));
-
-        const result = await receiveType<LoginResultPacket>(
+        await performRpc<LoginResultPacket>(
             socket,
+            new LoginPacket(
+                socket.protocolVersion,
+                this.credentials["user-credential"],
+                this.config,
+            ),
             PacketType.LoginResult,
         );
 
-        if (result.errorCode) {
-            throw new LoginError(result.errorCode);
-        }
-
+        // eagerly send our "status"
         await socket.send(new StatusPacket());
     }
 }

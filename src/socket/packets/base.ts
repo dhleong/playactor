@@ -22,3 +22,29 @@ export abstract class OutgoingPacket implements IPacket {
         return builder.build();
     }
 }
+
+export abstract class IncomingResultPacket extends IncomingPacket {
+    public readonly result: number;
+
+    public readonly errorCode?: string;
+
+    constructor(
+        data: Buffer,
+        resultToErrorCode: {[result: number]: string} = {},
+    ) {
+        super();
+
+        this.result = data.readInt32LE(8);
+        if (this.result !== 0) {
+            this.errorCode = resultToErrorCode[this.result] ?? "UNKNOWN";
+        }
+    }
+}
+
+export abstract class EmptyOutgoingPacket extends OutgoingPacket {
+    public readonly totalLength = 8;
+
+    public fillBuffer() {
+        // nop
+    }
+}

@@ -6,5 +6,8 @@ export enum PacketType {
 
     Status = 0x14,
 
+    Standby = 0x1A,
+    StandbyResult = 0x1B,
+
     Handshake = 0x20,
 }

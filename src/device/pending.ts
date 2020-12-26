@@ -7,6 +7,7 @@ import {
     INetworkConfig,
 } from "../discovery/model";
 import { StandardDiscoveryNetworkFactory } from "../discovery/standard";
+import { ISocketConfig } from "../socket/model";
 import { SimpleWakerFactory } from "../waker";
 import { UdpWakerNetworkFactory } from "../waker/udp";
 import { IDevice } from "./model";
@@ -24,22 +25,21 @@ export class PendingDevice implements IDevice {
         StandardDiscoveryNetworkFactory,
     ) {}
 
-    public get isConnected() {
-        return this.delegate?.isConnected ?? false;
-    }
-
     public async discover(config?: INetworkConfig) {
         const delegate = await this.resolve(config);
         return delegate.discover(config);
     }
 
-    public async open() {
+    public async wake() {
         const delegate = await this.resolve();
-        return delegate.open();
+        return delegate.wake();
     }
 
-    public close() {
-        return this.delegate?.close() ?? Promise.resolve();
+    public async openConnection(
+        socketConfig?: ISocketConfig,
+    ) {
+        const delegate = await this.resolve();
+        return delegate.openConnection(socketConfig);
     }
 
     private async resolve(config?: INetworkConfig) {
