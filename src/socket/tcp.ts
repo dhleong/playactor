@@ -15,6 +15,7 @@ import {
     ISocketConfig,
     PlaintextCodec,
 } from "./model";
+import { ByePacket } from "./packets/outgoing/bye";
 import { DeviceProtocolV1 } from "./protocol/v1";
 
 const socketPortsByVersion = {
@@ -135,8 +136,12 @@ export class TcpDeviceSocket implements IDeviceSocket {
     }
 
     public async close() {
-        // TODO we can send the "bye" packet here for a nicer cleanup
-        this.stream.destroy();
+        // polite disconnect
+        await this.send(new ByePacket());
+
+        for await (const packet of this.receive()) {
+            debug("received while awaiting close:", packet);
+        }
     }
 
     private onPacketReceived(packet: IPacket) {

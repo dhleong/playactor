@@ -1,6 +1,7 @@
 export enum PacketType {
     Hello = 0x6f636370,
 
+    Bye = 0x04,
     LoginResult = 0x07,
     Login = 0x1E,
 
