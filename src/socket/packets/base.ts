@@ -28,9 +28,10 @@ export interface IResultPacket extends IPacket {
     errorCode?: string;
 }
 
-export abstract class IncomingResultPacket
+export class IncomingResultPacket
     extends IncomingPacket
     implements IResultPacket {
+    public readonly type: number;
     public readonly result: number;
 
     public readonly errorCode?: string;
@@ -41,6 +42,7 @@ export abstract class IncomingResultPacket
     ) {
         super();
 
+        this.type = data.readInt32LE(4);
         this.result = data.readInt32LE(8);
         if (this.result !== 0) {
             this.errorCode = resultToErrorCode[this.result] ?? "UNKNOWN";

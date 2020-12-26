@@ -1,13 +1,16 @@
 import {
     IDeviceProtocol,
+    IDeviceSocket,
     IPacket,
     IPacketCodec,
     IPacketReader,
     PacketReadState,
 } from "../model";
+import { IncomingResultPacket } from "../packets/base";
 import { LoginResultPacket } from "../packets/incoming/login-result";
 import { ServerHelloPacket } from "../packets/incoming/server-hello";
 import { StandbyResultPacket } from "../packets/incoming/standby-result";
+import { StatusPacket } from "../packets/outgoing/status";
 import { PacketType } from "../packets/types";
 import { LengthDelimitedBufferReader } from "./base";
 
@@ -20,6 +23,7 @@ const packets: {[key: number]: PacketConstructor} = {
     [PacketType.Hello]: ServerHelloPacket,
     [PacketType.LoginResult]: LoginResultPacket,
     [PacketType.StandbyResult]: StandbyResultPacket,
+    [PacketType.ServerStatus]: IncomingResultPacket,
 };
 
 export class PacketReaderV1 implements IPacketReader {
@@ -53,5 +57,16 @@ export const DeviceProtocolV1: IDeviceProtocol = {
 
     createPacketReader(): IPacketReader {
         return new PacketReaderV1();
+    },
+
+    async onPacketReceived(
+        socket: IDeviceSocket,
+        packet: IPacket,
+    ) {
+        switch (packet.type) {
+            case PacketType.ServerStatus:
+                await socket.send(new StatusPacket());
+                break;
+        }
     },
 };

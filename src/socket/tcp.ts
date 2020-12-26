@@ -74,11 +74,7 @@ export class TcpDeviceSocket implements IDeviceSocket {
         this.processor = new BufferPacketProcessor(
             protocol,
             this.codec,
-            packet => {
-                for (const receiver of this.receivers) {
-                    receiver.write(packet);
-                }
-            },
+            packet => this.onPacketReceived(packet),
         );
 
         stream.on("end", () => this.handleEnd());
@@ -141,6 +137,23 @@ export class TcpDeviceSocket implements IDeviceSocket {
     public async close() {
         // TODO we can send the "bye" packet here for a nicer cleanup
         this.stream.destroy();
+    }
+
+    private onPacketReceived(packet: IPacket) {
+        for (const receiver of this.receivers) {
+            receiver.write(packet);
+        }
+
+        const handler = this.protocol.onPacketReceived;
+        if (handler) {
+            handler(this, packet).catch(err => {
+                debug("protocol error from", packet, ":", err);
+
+                if (!this.isConnected) {
+                    throw err;
+                }
+            });
+        }
     }
 
     private handleEnd(err?: any) {

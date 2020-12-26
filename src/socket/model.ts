@@ -49,6 +49,10 @@ export interface IPacketReader {
 export interface IDeviceProtocol {
     version: number;
     createPacketReader(): IPacketReader;
+    onPacketReceived?(
+        socket: IDeviceSocket,
+        packet: IPacket,
+    ): Promise<void>;
 }
 
 /**
