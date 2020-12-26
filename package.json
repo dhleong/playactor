@@ -13,7 +13,7 @@
     "clean": "rm -rf dist",
     "lint": "eslint . --cache --ext .ts",
     "prepublishOnly": "npm run check",
-    "test": "mocha -r ts-node/register test/**/*-test.ts"
+    "test": "mocha -r ts-node/register 'test/**/*-test.ts'"
   },
   "keywords": [
     "ps4",
