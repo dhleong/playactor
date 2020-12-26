@@ -1,0 +1,46 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node_version: [12]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Node dependency cache
+      uses: actions/cache@v2
+      with:
+        path: '**/node_modules'
+        key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+
+    - name: Install dependencies
+      run: |
+        npm install
+        npm install mocha-github-actions-reporter
+      env:
+        CI: true
+
+    - name: Verify
+      run: |
+        npm run lint && \
+        npm run build && \
+
+        # `npm run` refuses to pass the command line flags to mocha...
+        yarn test --reporter mocha-github-actions-reporter
+
+      env:
+        CI: true
+
