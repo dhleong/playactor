@@ -4,6 +4,7 @@ import net from "net";
 import { IDiscoveredDevice } from "../discovery/model";
 import { DiscoveryVersions } from "../protocol";
 import { CancellableAsyncSink } from "../util/async";
+import { BufferPacketProcessor } from "./base";
 
 import {
     IDeviceProc,
@@ -11,9 +12,7 @@ import {
     IDeviceSocket,
     IPacket,
     IPacketCodec,
-    IPacketReader,
     ISocketConfig,
-    PacketReadState,
     PlaintextCodec,
 } from "./model";
 import { DeviceProtocolV1 } from "./protocol/v1";
@@ -63,14 +62,23 @@ export class TcpDeviceSocket implements IDeviceSocket {
 
     private readonly receivers: CancellableAsyncSink<IPacket>[] = [];
     private codec: IPacketCodec = PlaintextCodec;
-
-    private reader?: IPacketReader;
+    private readonly processor: BufferPacketProcessor;
 
     constructor(
         public readonly device: IDiscoveredDevice,
         private readonly protocol: IDeviceProtocol,
         private readonly stream: net.Socket,
     ) {
+        this.processor = new BufferPacketProcessor(
+            protocol,
+            this.codec,
+            packet => {
+                for (const receiver of this.receivers) {
+                    receiver.write(packet);
+                }
+            },
+        );
+
         stream.on("end", () => {
             for (const receiver of this.receivers) {
                 receiver.end();
@@ -81,7 +89,10 @@ export class TcpDeviceSocket implements IDeviceSocket {
                 receiver.end(err);
             }
         });
-        stream.on("data", data => this.onDataReceived(data));
+        stream.on("data", data => {
+            debug("<<", data);
+            this.processor.onDataReceived(data);
+        });
     }
 
     public get protocolVersion() {
@@ -126,45 +137,11 @@ export class TcpDeviceSocket implements IDeviceSocket {
     public setCodec(codec: IPacketCodec) {
         debug("switch to codec:", codec);
         this.codec = codec;
+        this.processor.codec = codec;
     }
 
     public async close() {
         // TODO we can send the "bye" packet here for a nicer cleanup
         this.stream.destroy();
-    }
-
-    private onDataReceived(data: Buffer) {
-        debug("<<", data);
-
-        const reader = this.reader ?? (
-            this.reader = this.protocol.createPacketReader()
-        );
-        const result = reader.read(data);
-
-        switch (result) {
-            case PacketReadState.PENDING:
-                debug("wait for rest of packet");
-                break;
-
-            case PacketReadState.DONE:
-                this.dispatchNewPacket(reader);
-                break;
-        }
-    }
-
-    private dispatchNewPacket(reader: IPacketReader) {
-        const packet = reader.get(this.codec);
-        const remainder = reader.remainder();
-
-        for (const receiver of this.receivers) {
-            receiver.write(packet);
-        }
-
-        if (remainder) {
-            this.reader = this.protocol.createPacketReader();
-            this.reader.read(remainder);
-        } else {
-            this.reader = undefined;
-        }
     }
 }
