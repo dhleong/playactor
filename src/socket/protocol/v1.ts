@@ -5,7 +5,7 @@ import {
     IPacketReader,
     PacketReadState,
 } from "../model";
-import { ServerHelloPacket } from "../packets/server-hello";
+import { ServerHelloPacket } from "../packets/incoming/server-hello";
 import { PacketType } from "../packets/types";
 
 const PACKET_TYPE_OFFSET = 4;
