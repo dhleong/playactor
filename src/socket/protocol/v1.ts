@@ -10,6 +10,7 @@ import { IncomingResultPacket } from "../packets/base";
 import { LoginResultPacket } from "../packets/incoming/login-result";
 import { ServerHelloPacket } from "../packets/incoming/server-hello";
 import { StandbyResultPacket } from "../packets/incoming/standby-result";
+import { ByePacket } from "../packets/outgoing/bye";
 import { StatusPacket } from "../packets/outgoing/status";
 import { PacketType } from "../packets/types";
 import { LengthDelimitedBufferReader } from "./base";
@@ -68,5 +69,9 @@ export const DeviceProtocolV1: IDeviceProtocol = {
                 await socket.send(new StatusPacket());
                 break;
         }
+    },
+
+    async requestDisconnect(socket: IDeviceSocket) {
+        await socket.send(new ByePacket());
     },
 };

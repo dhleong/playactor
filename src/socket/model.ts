@@ -53,6 +53,7 @@ export interface IDeviceProtocol {
         socket: IDeviceSocket,
         packet: IPacket,
     ): Promise<void>;
+    requestDisconnect?(socket: IDeviceSocket): Promise<void>
 }
 
 /**
