@@ -23,7 +23,14 @@ export abstract class OutgoingPacket implements IPacket {
     }
 }
 
-export abstract class IncomingResultPacket extends IncomingPacket {
+export interface IResultPacket extends IPacket {
+    result: number;
+    errorCode?: string;
+}
+
+export abstract class IncomingResultPacket
+    extends IncomingPacket
+    implements IResultPacket {
     public readonly result: number;
 
     public readonly errorCode?: string;

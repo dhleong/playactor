@@ -2,7 +2,7 @@ import _debug from "debug";
 import NodeRSA from "node-rsa";
 
 import { CryptoCodec } from "../crypto-codec";
-import { receiveType } from "../helpers";
+import { performRpc } from "../helpers";
 import { IDeviceProc, IDeviceSocket } from "../model";
 import { ClientHelloPacket } from "../packets/outgoing/client-hello";
 import { HandshakePacket } from "../packets/outgoing/handshake";
@@ -23,17 +23,12 @@ swIDAQAB
 
 export class HandshakeProc implements IDeviceProc {
     public async perform(socket: IDeviceSocket) {
-        await socket.send(new ClientHelloPacket(socket.protocolVersion));
-
-        const greeting = await receiveType<ServerHelloPacket>(
+        const greeting: ServerHelloPacket = await performRpc(
             socket,
+            new ClientHelloPacket(socket.protocolVersion),
             PacketType.Hello,
         );
-        debug("received:", greeting);
-
-        if (greeting.result !== 0) {
-            throw new Error(`Unexpected result code: ${greeting.result}`);
-        }
+        debug("received greeting:", greeting);
 
         // prepare crypto with the "seed" in `greeting`
         const crypto = new CryptoCodec(greeting.seed);

@@ -1,7 +1,7 @@
-import { IncomingPacket } from "../base";
+import { IncomingPacket, IResultPacket } from "../base";
 import { PacketType } from "../types";
 
-export class ServerHelloPacket extends IncomingPacket {
+export class ServerHelloPacket extends IncomingPacket implements IResultPacket {
     public type = PacketType.Hello;
 
     public readonly version: number;
