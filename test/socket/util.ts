@@ -1,4 +1,9 @@
-import { IDeviceSocket, IPacket, IPacketCodec } from "../../src/socket/model";
+import {
+    IDeviceProc,
+    IDeviceSocket,
+    IPacket,
+    IPacketCodec,
+} from "../../src/socket/model";
 
 export class FakeSocket implements IDeviceSocket {
     public readonly protocolVersion = 0x42;
@@ -23,5 +28,9 @@ export class FakeSocket implements IDeviceSocket {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public setCodec(encoder: IPacketCodec) {
         // nop
+    }
+
+    public execute<R>(proc: IDeviceProc<R>): Promise<R> {
+        return proc.perform(this);
     }
 }
