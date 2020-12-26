@@ -36,6 +36,10 @@ export enum PacketReadState {
     DONE,
 }
 
+/**
+ * Reads a single packet then should be discarded; any data
+ * overflow can be retrieved from `remainder()`
+ */
 export interface IPacketReader {
     read(data: Buffer): PacketReadState;
     get(codec: IPacketCodec): IPacket;
