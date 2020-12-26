@@ -37,13 +37,14 @@ async function attemptOpen(
 ) {
     // send some packets to make sure the device is willing to accept our
     // TCP connection
+    const credsRecord = credentials as unknown as Record<string, unknown>;
     await waker.sendTo(device, formatDiscoveryMessage({
-        data: credentials,
+        data: credsRecord,
         type: "WAKEUP",
         version: device.discoveryVersion,
     }));
     await waker.sendTo(device, formatDiscoveryMessage({
-        data: credentials,
+        data: credsRecord,
         type: "LAUNCH",
         version: device.discoveryVersion,
     }));

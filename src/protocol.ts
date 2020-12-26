@@ -1,5 +1,3 @@
-import { ICredentials } from "./credentials/model";
-
 export const DiscoveryVersions = {
     PS4: "00020020",
     PS5: "00030010",
@@ -12,7 +10,7 @@ export function formatDiscoveryMessage({
     type,
     version,
 }: {
-    data?: Record<string, unknown> | ICredentials,
+    data?: Record<string, unknown>,
     type: string,
     version: DiscoveryVersion,
 }) {
