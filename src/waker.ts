@@ -23,9 +23,9 @@ export enum WakeResult {
 
 export class Waker {
     constructor(
-        private readonly credentials: CredentialManager,
+        public readonly credentials: CredentialManager,
         private readonly discoveryConfig: Partial<IDiscoveryConfig>,
-        private readonly networkFactory: IWakerNetworkFactory =
+        public readonly networkFactory: IWakerNetworkFactory =
         new UdpWakerNetworkFactory(),
         private readonly discoveryFactory: IDiscoveryNetworkFactory =
         StandardDiscoveryNetworkFactory,

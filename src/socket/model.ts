@@ -56,6 +56,7 @@ export interface IDeviceProtocol {
  */
 export interface IDeviceSocket {
     protocolVersion: number;
+    isConnected: boolean;
 
     close(): Promise<void>;
     receive(): AsyncIterable<IPacket>;

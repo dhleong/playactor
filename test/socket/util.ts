@@ -13,6 +13,10 @@ export class FakeSocket implements IDeviceSocket {
 
     public sent: IPacket[] = [];
 
+    public get isConnected() {
+        return !this.isClosed;
+    }
+
     public async close() {
         this.isClosed = true;
     }

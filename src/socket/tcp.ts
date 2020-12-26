@@ -64,6 +64,8 @@ export class TcpDeviceSocket implements IDeviceSocket {
     private codec: IPacketCodec = PlaintextCodec;
     private readonly processor: BufferPacketProcessor;
 
+    private isClosed = false;
+
     constructor(
         public readonly device: IDiscoveredDevice,
         private readonly protocol: IDeviceProtocol,
@@ -79,16 +81,8 @@ export class TcpDeviceSocket implements IDeviceSocket {
             },
         );
 
-        stream.on("end", () => {
-            for (const receiver of this.receivers) {
-                receiver.end();
-            }
-        });
-        stream.on("error", err => {
-            for (const receiver of this.receivers) {
-                receiver.end(err);
-            }
-        });
+        stream.on("end", () => this.handleEnd());
+        stream.on("error", err => this.handleEnd(err));
         stream.on("data", data => {
             debug("<<", data);
             this.processor.onDataReceived(data);
@@ -97,6 +91,10 @@ export class TcpDeviceSocket implements IDeviceSocket {
 
     public get protocolVersion() {
         return this.protocol.version;
+    }
+
+    public get isConnected() {
+        return !this.isClosed;
     }
 
     public execute<R>(proc: IDeviceProc<R>): Promise<R> {
@@ -143,5 +141,13 @@ export class TcpDeviceSocket implements IDeviceSocket {
     public async close() {
         // TODO we can send the "bye" packet here for a nicer cleanup
         this.stream.destroy();
+    }
+
+    private handleEnd(err?: any) {
+        this.isClosed = true;
+
+        for (const receiver of this.receivers) {
+            receiver.end(err);
+        }
     }
 }
