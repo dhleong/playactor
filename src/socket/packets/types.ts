@@ -5,6 +5,9 @@ export enum PacketType {
     LoginResult = 0x07,
     Login = 0x1E,
 
+    Boot = 0x0a,
+    BootResult = 0x0b,
+
     ServerStatus = 0x12,
     Status = 0x14,
 
