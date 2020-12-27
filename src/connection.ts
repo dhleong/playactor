@@ -1,4 +1,5 @@
 import { IDeviceSocket } from "./socket/model";
+import { KeyPress, RemoteControlProc } from "./socket/proc/remote-control";
 import { StandbyProc } from "./socket/proc/standby";
 import { StartTitleProc } from "./socket/proc/start-title";
 
@@ -20,6 +21,13 @@ export class DeviceConnection {
      */
     public close() {
         return this.socket.close();
+    }
+
+    /**
+     * Send a sequence of keypress events
+     */
+    public async sendKeys(events: KeyPress[]) {
+        await this.socket.execute(new RemoteControlProc(events));
     }
 
     /**

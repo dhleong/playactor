@@ -70,6 +70,7 @@ export class TcpDeviceSocket implements IDeviceSocket {
         public readonly device: IDiscoveredDevice,
         private readonly protocol: IDeviceProtocol,
         private readonly stream: net.Socket,
+        public readonly openedTimestamp: number = Date.now(),
     ) {
         this.processor = new BufferPacketProcessor(
             protocol,

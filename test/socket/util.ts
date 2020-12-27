@@ -7,6 +7,7 @@ import {
 
 export class FakeSocket implements IDeviceSocket {
     public readonly protocolVersion = 0x42;
+    public openedTimestamp: number = Date.now();
 
     public isClosed = false;
     public enqueued: IPacket[] = [];
