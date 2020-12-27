@@ -4,7 +4,7 @@ import { IDiscoveredDevice, INetworkConfig } from "../discovery/model";
 import { DiscoveryVersions } from "../protocol";
 import { IWakerNetwork, IWakerNetworkFactory } from "./model";
 
-const wakePortsByVersion = {
+export const wakePortsByVersion = {
     [DiscoveryVersions.PS4]: 987,
     [DiscoveryVersions.PS5]: 9302,
 };
