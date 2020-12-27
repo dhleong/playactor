@@ -28,7 +28,7 @@ export const Device = {
     ) {
         return new PendingDevice(
             `with address ${address}`,
-            device => device.address === address,
+            device => device.address.address === address,
             config,
             config,
         );

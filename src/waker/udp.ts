@@ -28,7 +28,8 @@ export class UdpWakerNetwork implements IWakerNetwork {
         }
 
         return new Promise<void>((resolve, reject) => {
-            socket.send(message, device.port, device.address, err => {
+            const { port, address } = device.address;
+            socket.send(message, port, address, err => {
                 if (err) reject(err);
                 else resolve();
             });
