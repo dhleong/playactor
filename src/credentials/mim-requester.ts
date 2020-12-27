@@ -10,6 +10,16 @@ import { DiscoveryVersions } from "../protocol";
 import { CancellableAsyncSink } from "../util/async";
 import { ICredentialRequester, ICredentials } from "./model";
 
+export interface IEmulatorOptions {
+    hostId: string;
+    hostName: string;
+}
+
+const defaultEmulatorOptions = {
+    hostId: "1234567890AB",
+    hostName: "PlayGround",
+};
+
 const debug = _debug("playground:credentials:mim");
 
 /**
@@ -19,38 +29,62 @@ const debug = _debug("playground:credentials:mim");
  * the app is passing.
  */
 export class MimCredentialRequester implements ICredentialRequester {
+    private readonly emulatorOptions: IEmulatorOptions;
+
     constructor(
         private readonly networkFactory: IDiscoveryNetworkFactory,
         private readonly networkConfig: INetworkConfig,
-    ) {}
+        emulatorOptions: Partial<IEmulatorOptions> = {},
+    ) {
+        this.emulatorOptions = {
+            ...defaultEmulatorOptions,
+            ...emulatorOptions,
+        };
+    }
 
     public async requestForDevice(device: IDiscoveredDevice): Promise<ICredentials> {
-        const sink = new CancellableAsyncSink<[IDiscoveryMessage, any]>();
+        const sink = new CancellableAsyncSink<IDiscoveryMessage>();
         const localBindPort = device.discoveryVersion === DiscoveryVersions.PS4
             ? 987
             : 987; // TODO ?
 
+        const hostType = device.discoveryVersion === DiscoveryVersions.PS4
+            ? "PS4"
+            : "PS5"; // ?
+
         const network = this.networkFactory.createMessages({
             ...this.networkConfig,
             localBindPort,
-        }, (message, sender) => {
-            debug("received:", message, sender);
-            sink.write([message, sender]);
+        }, message => {
+            debug("received:", message);
+            sink.write(message);
         });
 
         sink.onCancel = () => network.close();
 
-        for await (const [message, sender] of sink) {
+        const searchStatus = "HTTP/1.1 620 Server Standby";
+        const searchResponse = {
+            "host-id": this.emulatorOptions.hostId,
+            "host-name": this.emulatorOptions.hostName,
+            "host-type": hostType,
+            "host-request-port": localBindPort,
+        };
+
+        for await (const message of sink) {
+            const { sender } = message;
             switch (message.type) {
                 case "SRCH":
-                    // FIXME: respond with status message, etc.
-                    await network.send(sender.address, sender.port, "", {
-                    });
+                    await network.send(
+                        sender.address,
+                        sender.port,
+                        searchStatus,
+                        searchResponse,
+                    );
                     break;
 
                 case "WAKEUP":
                     debug("received WAKEUP from", sender);
-                    return message.data;
+                    return message.data as unknown as ICredentials;
 
                 default:
                     break; // nop

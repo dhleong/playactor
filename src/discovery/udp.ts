@@ -2,6 +2,7 @@ import _debug from "debug";
 import dgram from "dgram";
 
 import { DiscoveryVersion, formatDiscoveryMessage } from "../protocol";
+import { parseMessage } from "./messages";
 
 import {
     DeviceStatus,
@@ -116,15 +117,13 @@ export class UdpDiscoveryNetworkFactory implements IDiscoveryNetworkFactory {
         const { socket, isNew } = this.socketManager.acquire(bindPort);
 
         socket.on("message", (message, rinfo) => {
+            const parsed = parseMessage(message);
             onMessage({
-                type: "DEVICE", // ?
-                data: {
-                    raw: message,
-                    discoveryVersion: this.version,
-                    id: "", // TODO
-                    status: DeviceStatus.STANDBY, // TODO
-                },
-            }, rinfo);
+                type: parsed.type,
+                sender: rinfo,
+                version: this.version,
+                data: parsed,
+            });
         });
 
         if (isNew) {
@@ -153,14 +152,14 @@ export class UdpDiscoveryNetworkFactory implements IDiscoveryNetworkFactory {
         config: INetworkConfig,
         onDevice: OnDeviceDiscoveredHandler,
     ) {
-        return this.createMessages(config, (message, sender) => {
+        return this.createMessages(config, message => {
             if (message.type === "DEVICE") {
                 onDevice({
-                    ...sender,
+                    address: message.sender,
 
-                    discoveryVersion: this.version,
-                    id: "", // TODO
-                    status: DeviceStatus.STANDBY, // TODO
+                    discoveryVersion: message.version,
+                    id: message.data["host-id"],
+                    status: message.data.status as DeviceStatus,
                 });
             }
         });
