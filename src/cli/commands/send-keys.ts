@@ -36,7 +36,18 @@ export function parseKeys(keys: string[]): KeyPress[] {
 }
 
 @command({
-    description: "Send a sequence of keys",
+    brief: "Send a sequence of keys",
+    description: `
+Send a sequence of keys to the device. Valid keys are:
+
+    up, down, left, right, enter, back, option, ps
+
+You cannot send the actual x, square, etc. buttons. Each provided key
+will be sent sequentially.
+
+In addition, a key name may be followed by a colon and a duration in
+milliseconds to hold that key, eg: playground send-keys ps:1000
+    `.trim(),
 })
 export default class extends Command {
     /* eslint-disable @typescript-eslint/indent */
