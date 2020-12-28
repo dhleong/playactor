@@ -11,12 +11,26 @@ import { StandardDiscoveryNetworkFactory } from "../discovery/standard";
 import { MimCredentialRequester } from "../credentials/mim-requester";
 
 export class LoggingOptions extends Options {
+    /* eslint-disable no-console */
+
     @option({
         name: "debug",
         description: "Enable debug logging",
         toggle: true,
     })
     public enableDebug = false;
+
+    public logError(error: any) {
+        console.error(error);
+    }
+
+    public logResult(result: any) {
+        if (typeof result === "string") {
+            console.log(result);
+        } else {
+            console.log(JSON.stringify(result, null, 2));
+        }
+    }
 
     public async configureLogging() {
         if (this.enableDebug) {
