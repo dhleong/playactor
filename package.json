@@ -22,6 +22,9 @@
     "wol",
     "remote"
   ],
+  "bin": {
+    "playground": "./dist/cli/index.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dhleong/playground.git"
