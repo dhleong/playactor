@@ -8,6 +8,7 @@ import { CredentialManager } from "../credentials";
 import { PendingDevice } from "../device/pending";
 import { IDiscoveredDevice, IDiscoveryConfig, INetworkConfig } from "../discovery/model";
 import { StandardDiscoveryNetworkFactory } from "../discovery/standard";
+import { MimCredentialRequester } from "../credentials/mim-requester";
 
 export class LoggingOptions extends Options {
     @option({
@@ -50,15 +51,20 @@ export class DeviceOptions extends LoggingOptions {
             timeoutMillis: this.deviceTimeout,
         };
 
-        // TODO dummy support
-        const credentials = new CredentialManager();
+        const networkFactory = StandardDiscoveryNetworkFactory;
+        const credentials = new CredentialManager(
+            new MimCredentialRequester(
+                networkFactory,
+                networkConfig,
+            ),
+        );
 
         const device = new PendingDevice(
             description,
             predicate,
             networkConfig,
             discoveryConfig,
-            StandardDiscoveryNetworkFactory,
+            networkFactory,
             credentials,
         );
         await device.discover();
