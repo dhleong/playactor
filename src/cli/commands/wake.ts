@@ -3,7 +3,7 @@ import { Command, command, metadata } from "clime";
 import { DeviceOptions } from "../options";
 
 @command({
-    description: "Wake up a device",
+    description: "Wake up the device",
 })
 export default class extends Command {
     @metadata
