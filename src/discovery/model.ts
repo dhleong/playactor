@@ -16,13 +16,37 @@ export interface INetworkConfig {
 }
 
 export enum DeviceStatus {
-    STANDBY,
-    AWAKE,
+    STANDBY = "STANDBY",
+    AWAKE = "AWAKE",
+}
+
+export interface IDeviceAddress {
+    address: string;
+    port: number;
+    family: "IPv4" | "IPv6";
+}
+
+export type DiscoveryKey =
+    "host-id"
+    | "host-type"
+    | "host-request-port"
+    | "host-name";
+
+export enum DiscoveryMessageType {
+    SRCH = "SRCH",
+    WAKEUP = "WAKEUP",
+    DEVICE = "DEVICE",
+}
+
+export interface IDiscoveryMessage {
+    type: DiscoveryMessageType;
+    sender: IDeviceAddress;
+    version: DiscoveryVersion;
+    data: Record<DiscoveryKey | string, string>;
 }
 
 export interface IDiscoveredDevice {
-    address: string;
-    port: number;
+    address: IDeviceAddress;
 
     discoveryVersion: DiscoveryVersion;
     id: string;
@@ -30,16 +54,29 @@ export interface IDiscoveredDevice {
 }
 
 export type OnDeviceDiscoveredHandler = (device: IDiscoveredDevice) => void;
+export type OnDiscoveryMessageHandler = (message: IDiscoveryMessage) => void;
 
 export interface IDiscoveryNetwork {
     close(): void;
 
     /** Request devices on the network to identify themselves */
     ping(): Promise<void>;
+
+    send(
+        recipientAddress: string,
+        recipientPort: number,
+        type: string,
+        data?: Record<DiscoveryKey | string, unknown>,
+    ): Promise<void>;
 }
 
 export interface IDiscoveryNetworkFactory {
-    create(
+    createMessages(
+        config: INetworkConfig,
+        onMessage: OnDiscoveryMessageHandler,
+    ): IDiscoveryNetwork;
+
+    createDevices(
         config: INetworkConfig,
         onDevice: OnDeviceDiscoveredHandler,
     ): IDiscoveryNetwork;

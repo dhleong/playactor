@@ -2,6 +2,7 @@ import _debug from "debug";
 import dgram from "dgram";
 
 import { DiscoveryVersion, formatDiscoveryMessage } from "../protocol";
+import { parseMessage } from "./messages";
 
 import {
     DeviceStatus,
@@ -9,6 +10,7 @@ import {
     IDiscoveryNetworkFactory,
     INetworkConfig,
     OnDeviceDiscoveredHandler,
+    OnDiscoveryMessageHandler,
 } from "./model";
 
 const debug = _debug("playground:discovery:udp");
@@ -75,13 +77,26 @@ export class UdpDiscoveryNetwork implements IDiscoveryNetwork {
     }
 
     public async ping() {
+        return this.send(BROADCAST_ADDRESS, this.port, "SRCH");
+    }
+
+    public async send(
+        recipientAddress: string,
+        recipientPort: number,
+        type: string,
+        data?: Record<string, unknown>,
+    ) {
         const message = formatDiscoveryMessage({
-            type: "SRCH",
+            data,
+            type,
             version: this.version,
         });
 
-        debug("broadcast ping:", message);
-        this.socket.send(message, this.port, BROADCAST_ADDRESS);
+        debug(
+            "send ping:", message, " to ",
+            recipientAddress, ":", recipientPort,
+        );
+        this.socket.send(message, recipientPort, recipientAddress);
     }
 }
 
@@ -94,21 +109,20 @@ export class UdpDiscoveryNetworkFactory implements IDiscoveryNetworkFactory {
         private readonly socketManager: UdpSocketManager = singletonUdpSocketManager,
     ) {}
 
-    public create(
+    public createMessages(
         config: INetworkConfig,
-        onDevice: OnDeviceDiscoveredHandler,
+        onMessage: OnDiscoveryMessageHandler,
     ) {
         const bindPort = config.localBindPort ?? 0;
         const { socket, isNew } = this.socketManager.acquire(bindPort);
 
         socket.on("message", (message, rinfo) => {
-            onDevice({
-                address: rinfo.address,
-                port: rinfo.port,
-
-                discoveryVersion: this.version,
-                id: "", // TODO
-                status: DeviceStatus.STANDBY, // TODO
+            const parsed = parseMessage(message);
+            onMessage({
+                type: parsed.type,
+                sender: rinfo,
+                version: this.version,
+                data: parsed,
             });
         });
 
@@ -132,5 +146,22 @@ export class UdpDiscoveryNetworkFactory implements IDiscoveryNetworkFactory {
             this.port,
             this.version,
         );
+    }
+
+    public createDevices(
+        config: INetworkConfig,
+        onDevice: OnDeviceDiscoveredHandler,
+    ) {
+        return this.createMessages(config, message => {
+            if (message.type === "DEVICE") {
+                onDevice({
+                    address: message.sender,
+
+                    discoveryVersion: message.version,
+                    id: message.data["host-id"],
+                    status: message.data.status as DeviceStatus,
+                });
+            }
+        });
     }
 }

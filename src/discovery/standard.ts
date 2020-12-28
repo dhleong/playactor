@@ -6,6 +6,7 @@ import {
     IDiscoveryNetworkFactory,
     INetworkConfig,
     OnDeviceDiscoveredHandler,
+    OnDiscoveryMessageHandler,
 } from "./model";
 import { UdpDiscoveryNetworkFactory } from "./udp";
 
@@ -15,12 +16,21 @@ const standardFactories = [
 ];
 
 export const StandardDiscoveryNetworkFactory: IDiscoveryNetworkFactory = {
-    create(
+    createDevices(
         config: INetworkConfig,
         onDevice: OnDeviceDiscoveredHandler,
     ): IDiscoveryNetwork {
         return new CompositeDiscoveryNetwork(
-            standardFactories.map(factory => factory.create(config, onDevice)),
+            standardFactories.map(factory => factory.createDevices(config, onDevice)),
+        );
+    },
+
+    createMessages(
+        config: INetworkConfig,
+        onMessage: OnDiscoveryMessageHandler,
+    ): IDiscoveryNetwork {
+        return new CompositeDiscoveryNetwork(
+            standardFactories.map(factory => factory.createMessages(config, onMessage)),
         );
     },
 };

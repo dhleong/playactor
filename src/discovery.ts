@@ -34,7 +34,7 @@ export class Discovery {
         debug("discover(", fullConfig, ")");
 
         const sink = new CancellableAsyncSink<IDiscoveredDevice>();
-        const network = this.networkFactory.create(networkConfig, device => {
+        const network = this.networkFactory.createDevices(networkConfig, device => {
             sink.write(device);
         });
 

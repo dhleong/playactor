@@ -47,7 +47,7 @@ export class TcpDeviceSocket implements IDeviceSocket {
         return new Promise<TcpDeviceSocket>((resolve, reject) => {
             const socket = net.createConnection({
                 port,
-                host: device.address,
+                host: device.address.address,
                 timeout: config.connectTimeoutMillis,
             });
             socket.once("connect", () => {

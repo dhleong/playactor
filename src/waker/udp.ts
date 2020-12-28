@@ -4,7 +4,7 @@ import { IDiscoveredDevice, INetworkConfig } from "../discovery/model";
 import { DiscoveryVersions } from "../protocol";
 import { IWakerNetwork, IWakerNetworkFactory } from "./model";
 
-const wakePortsByVersion = {
+export const wakePortsByVersion = {
     [DiscoveryVersions.PS4]: 987,
     [DiscoveryVersions.PS5]: 9302,
 };
@@ -28,7 +28,8 @@ export class UdpWakerNetwork implements IWakerNetwork {
         }
 
         return new Promise<void>((resolve, reject) => {
-            socket.send(message, device.port, device.address, err => {
+            const { port, address } = device.address;
+            socket.send(message, port, address, err => {
                 if (err) reject(err);
                 else resolve();
             });
