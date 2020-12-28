@@ -34,7 +34,7 @@ export class DeviceOptions extends LoggingOptions {
 
     @option({
         name: "timeout",
-        description: "How long to wait before deciding the device cannot be found (milliseconds)",
+        description: "How long to look for the device (milliseconds)",
     })
     public deviceTimeout?: number;
 
