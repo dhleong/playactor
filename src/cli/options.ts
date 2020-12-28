@@ -1,20 +1,27 @@
+import debug from "debug";
 import {
     Options,
     option,
 } from "clime";
-import { CredentialManager } from "../credentials";
 
+import { CredentialManager } from "../credentials";
 import { PendingDevice } from "../device/pending";
-import { IDiscoveredDevice } from "../discovery/model";
+import { IDiscoveredDevice, IDiscoveryConfig, INetworkConfig } from "../discovery/model";
 import { StandardDiscoveryNetworkFactory } from "../discovery/standard";
 
 export class LoggingOptions extends Options {
     @option({
-        flag: "v",
-        description: "Output verbose logging",
+        name: "debug",
+        description: "Enable debug logging",
         toggle: true,
     })
-    public verbose = false;
+    public enableDebug = false;
+
+    public async configureLogging() {
+        if (this.enableDebug) {
+            debug.enable("playground:*");
+        }
+    }
 }
 
 export class DeviceOptions extends LoggingOptions {
@@ -24,7 +31,15 @@ export class DeviceOptions extends LoggingOptions {
     })
     public deviceIp?: string;
 
+    @option({
+        name: "timeout",
+        description: "How long to wait before deciding the device cannot be found (milliseconds)",
+    })
+    public deviceTimeout?: number;
+
     public async findDevice() {
+        this.configureLogging();
+
         let description = "any device";
         let predicate: (device: IDiscoveredDevice) => boolean = () => true;
 
@@ -33,7 +48,15 @@ export class DeviceOptions extends LoggingOptions {
             predicate = device => device.address.address === this.deviceIp;
         }
 
-        // TODO other selection mechanisms, network options, etc.
+        // TODO other selection mechanisms
+
+        const networkConfig: INetworkConfig = {
+            // TODO
+        };
+
+        const discoveryConfig: Partial<IDiscoveryConfig> = {
+            timeoutMillis: this.deviceTimeout,
+        };
 
         // TODO dummy support
         const credentials = new CredentialManager();
@@ -41,7 +64,8 @@ export class DeviceOptions extends LoggingOptions {
         const device = new PendingDevice(
             description,
             predicate,
-            {}, {},
+            networkConfig,
+            discoveryConfig,
             StandardDiscoveryNetworkFactory,
             credentials,
         );
