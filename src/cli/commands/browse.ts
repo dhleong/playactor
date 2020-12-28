@@ -8,7 +8,7 @@ import { DiscoveryOptions } from "../options";
 import { Discovery } from "../../discovery";
 
 @command({
-    description: "Browse for device on the network, printing information about each one",
+    brief: "Browse for device on the network",
 })
 export default class extends Command {
     @metadata
