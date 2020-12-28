@@ -40,15 +40,7 @@ export class DeviceOptions extends LoggingOptions {
     public async findDevice() {
         this.configureLogging();
 
-        let description = "any device";
-        let predicate: (device: IDiscoveredDevice) => boolean = () => true;
-
-        if (this.deviceIp) {
-            description = `device at ${this.deviceIp}`;
-            predicate = device => device.address.address === this.deviceIp;
-        }
-
-        // TODO other selection mechanisms
+        const { description, predicate } = this.configurePending();
 
         const networkConfig: INetworkConfig = {
             // TODO
@@ -73,5 +65,18 @@ export class DeviceOptions extends LoggingOptions {
 
         // if we got here, the device was found!
         return device;
+    }
+
+    private configurePending() {
+        let description = "any device";
+        let predicate: (device: IDiscoveredDevice) => boolean = () => true;
+
+        if (this.deviceIp) {
+            description = `device at ${this.deviceIp}`;
+            predicate = device => device.address.address === this.deviceIp;
+        }
+
+        // TODO other selection mechanisms
+        return { description, predicate };
     }
 }
