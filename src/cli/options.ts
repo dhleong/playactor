@@ -39,18 +39,26 @@ export class LoggingOptions extends Options {
     }
 }
 
-export class DeviceOptions extends LoggingOptions {
+export class DiscoveryOptions extends LoggingOptions {
+    @option({
+        name: "timeout",
+        description: "How long to look for device(s) (milliseconds)",
+    })
+    public deviceTimeout?: number;
+
+    public get discoveryConfig(): Partial<IDiscoveryConfig> {
+        return {
+            timeoutMillis: this.deviceTimeout,
+        };
+    }
+}
+
+export class DeviceOptions extends DiscoveryOptions {
     @option({
         name: "ip",
         description: "Select a specific device by IP",
     })
     public deviceIp?: string;
-
-    @option({
-        name: "timeout",
-        description: "How long to look for the device (milliseconds)",
-    })
-    public deviceTimeout?: number;
 
     public async findDevice() {
         this.configureLogging();
@@ -59,10 +67,6 @@ export class DeviceOptions extends LoggingOptions {
 
         const networkConfig: INetworkConfig = {
             // TODO
-        };
-
-        const discoveryConfig: Partial<IDiscoveryConfig> = {
-            timeoutMillis: this.deviceTimeout,
         };
 
         const networkFactory = StandardDiscoveryNetworkFactory;
@@ -77,7 +81,7 @@ export class DeviceOptions extends LoggingOptions {
             description,
             predicate,
             networkConfig,
-            discoveryConfig,
+            this.discoveryConfig,
             networkFactory,
             credentials,
         );
