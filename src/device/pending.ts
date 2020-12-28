@@ -23,6 +23,7 @@ export class PendingDevice implements IDevice {
         private readonly discoveryConfig: Partial<IDiscoveryConfig> = {},
         private readonly discoveryFactory: IDiscoveryNetworkFactory =
         StandardDiscoveryNetworkFactory,
+        private readonly credentials: CredentialManager = new CredentialManager(),
     ) {}
 
     public async discover(config?: INetworkConfig) {
@@ -54,7 +55,7 @@ export class PendingDevice implements IDevice {
             if (this.predicate(device)) {
                 const newDelegate = new ResolvedDevice(
                     new SimpleWakerFactory({
-                        credentials: new CredentialManager(),
+                        credentials: this.credentials,
                         discoveryConfig: this.discoveryConfig,
                         networkFactory: new UdpWakerNetworkFactory(),
                         discoveryFactory: StandardDiscoveryNetworkFactory,

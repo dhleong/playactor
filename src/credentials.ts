@@ -8,8 +8,8 @@ import { IDiscoveredDevice } from "./discovery/model";
 
 export class CredentialManager {
     constructor(
-        private readonly storage: ICredentialStorage = new DiskCredentialsStorage(),
         private readonly requester: ICredentialRequester = RejectingCredentialRequester,
+        private readonly storage: ICredentialStorage = new DiskCredentialsStorage(),
     ) {}
 
     public async getForDevice(device: IDiscoveredDevice) {
