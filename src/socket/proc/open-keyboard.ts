@@ -17,6 +17,9 @@ export class OpenKeyboardProc implements IDeviceProc<OnScreenKeyboard> {
             socket,
             result.maxLength,
             result.initialContent,
+            result.actionType,
+            result.inputType,
+            result.flags,
         );
     }
 }

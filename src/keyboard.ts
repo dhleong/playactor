@@ -1,5 +1,7 @@
 import { IDeviceSocket } from "./socket/model";
-import { OskCommand } from "./socket/osk";
+import {
+    OskActionType, OskCommand, OskFlags, OskInputType,
+} from "./socket/osk";
 import { OskControlPacket } from "./socket/packets/outgoing/osk-control";
 
 /**
@@ -12,10 +14,18 @@ export class OnScreenKeyboard {
         private readonly socket: IDeviceSocket,
         public readonly maxLength: number,
         public readonly initialContent: string,
+        public readonly actionType: OskActionType = OskActionType.Default,
+        public readonly inputType: OskInputType = OskInputType.Default,
+        public readonly flags: OskFlags = OskFlags.None,
     ) {}
 
     public get isActive() {
         return this.isValid;
+    }
+
+    public hasFlag(flag: OskFlags) {
+        // eslint-disable-next-line no-bitwise
+        return (this.flags & flag) !== 0;
     }
 
     /**
