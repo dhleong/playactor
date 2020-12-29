@@ -8,6 +8,10 @@ export enum PacketType {
     Boot = 0x0a,
     BootResult = 0x0b,
 
+    OskChangeString = 0x0e,
+    OskControl = 0x10,
+    OskStart = 0x0c,
+
     ServerStatus = 0x12,
     Status = 0x14,
 
