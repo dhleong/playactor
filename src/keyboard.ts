@@ -10,6 +10,8 @@ export class OnScreenKeyboard {
 
     constructor(
         private readonly socket: IDeviceSocket,
+        public readonly maxLength: number,
+        public readonly initialContent: string,
     ) {}
 
     public get isActive() {
