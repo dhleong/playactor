@@ -1,4 +1,5 @@
 import { IDeviceSocket } from "./socket/model";
+import { OpenKeyboardProc } from "./socket/proc/open-keyboard";
 import { KeyPress, RemoteControlProc } from "./socket/proc/remote-control";
 import { StandbyProc } from "./socket/proc/standby";
 import { StartTitleProc } from "./socket/proc/start-title";
@@ -21,6 +22,15 @@ export class DeviceConnection {
      */
     public close() {
         return this.socket.close();
+    }
+
+    /**
+     * Attempt to control the on-screen keyboard for a text field on the
+     * screen. If there is no such text field, this method will reject
+     * with an error.
+     */
+    public async openKeyboard() {
+        return this.socket.execute(new OpenKeyboardProc());
     }
 
     /**
