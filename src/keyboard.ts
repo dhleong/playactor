@@ -2,6 +2,7 @@ import { IDeviceSocket } from "./socket/model";
 import {
     OskActionType, OskCommand, OskFlags, OskInputType,
 } from "./socket/osk";
+import { OskChangeStringPacket } from "./socket/packets/outgoing/osk-change-string";
 import { OskControlPacket } from "./socket/packets/outgoing/osk-control";
 
 /**
@@ -38,6 +39,22 @@ export class OnScreenKeyboard {
 
         await this.socket.send(new OskControlPacket(OskCommand.Close));
         this.isValid = false;
+    }
+
+    /**
+     * Set the current OSK text, optionally choosing a specific
+     *  position for the caret.
+     */
+    public async setText(
+        text: string,
+        caretIndex?: number,
+    ) {
+        this.ensureValid();
+
+        await this.socket.send(new OskChangeStringPacket(
+            text,
+            { caretIndex },
+        ));
     }
 
     /**
