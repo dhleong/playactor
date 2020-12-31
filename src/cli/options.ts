@@ -9,6 +9,7 @@ import { PendingDevice } from "../device/pending";
 import { IDiscoveredDevice, IDiscoveryConfig, INetworkConfig } from "../discovery/model";
 import { StandardDiscoveryNetworkFactory } from "../discovery/standard";
 import { MimCredentialRequester } from "../credentials/mim-requester";
+import { DiskCredentialsStorage } from "../credentials/disk-storage";
 
 export class LoggingOptions extends Options {
     /* eslint-disable no-console */
@@ -60,6 +61,14 @@ export class DeviceOptions extends DiscoveryOptions {
     })
     public deviceIp?: string;
 
+    @option({
+        name: "credentials",
+        flag: "c",
+        placeholder: "path",
+        description: "Path to a file for storing credentials",
+    })
+    public credentialsPath?: string;
+
     public async findDevice() {
         this.configureLogging();
 
@@ -74,6 +83,9 @@ export class DeviceOptions extends DiscoveryOptions {
             new MimCredentialRequester(
                 networkFactory,
                 networkConfig,
+            ),
+            new DiskCredentialsStorage(
+                this.credentialsPath,
             ),
         );
 
