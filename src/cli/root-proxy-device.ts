@@ -1,5 +1,6 @@
 import { Printable } from "clime";
 import _debug from "debug";
+import { resolve as realResolvePath } from "path";
 
 import { RootMissingError } from "../credentials/root-managing";
 import { IDevice } from "../device/model";
@@ -15,6 +16,13 @@ export class RootProxiedError extends Error implements Printable {
     public print() {
         debug("root proxied; this process became nop");
     }
+}
+
+export interface IRootProxyConfig {
+    providedCredentialsPath?: string,
+    effectiveCredentialsPath: string,
+    invocationArgs: string[],
+    currentUserId: number,
 }
 
 export class RootProxyDevice implements IDevice {
@@ -33,8 +41,8 @@ export class RootProxyDevice implements IDevice {
     constructor(
         private readonly cliProxy: ICliProxy,
         private readonly delegate: IDevice,
-        private readonly invocationArgs: string[],
-        private readonly currentUserId: number,
+        private readonly config: IRootProxyConfig,
+        private readonly resolvePath: (p: string) => string = realResolvePath,
     ) {}
 
     public async discover(config?: INetworkConfig) {
@@ -64,7 +72,7 @@ export class RootProxyDevice implements IDevice {
 
     private async tryResolveError(e: any): Promise<never> {
         if (e instanceof RootMissingError) {
-            if (!this.currentUserId) {
+            if (!this.config.currentUserId) {
                 // already root, but root missing? this probably
                 // shouldn't happen...
                 throw e;
@@ -80,12 +88,26 @@ export class RootProxyDevice implements IDevice {
     }
 
     private async proxyCliInvocation() {
-        // TODO: resolve credentials path?
+        const baseArgs = [...this.config.invocationArgs];
+
+        if (!this.config.providedCredentialsPath) {
+            // if we aren't already explicitly passing a credentials
+            // file path, do so now (to avoid potential confusion)
+            baseArgs.push("--credentials");
+            baseArgs.push(this.config.effectiveCredentialsPath);
+        } else {
+            // if we *did* provide credentials, we need to make sure the
+            // full path is resolved, just in case sudo changes things
+            // in weird ways (for example, if they used ~ in the path,
+            // and being sudo changes the meaning of that)
+            const oldIndex = baseArgs.indexOf(this.config.providedCredentialsPath);
+            baseArgs[oldIndex] = this.resolvePath(this.config.providedCredentialsPath);
+        }
 
         await this.cliProxy.invoke([
-            ...this.invocationArgs,
+            ...baseArgs,
             PROXIED_ID_ARG,
-            this.currentUserId.toString(),
+            this.config.currentUserId.toString(),
         ]);
     }
 }

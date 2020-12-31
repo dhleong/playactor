@@ -87,6 +87,9 @@ export class DeviceOptions extends DiscoveryOptions {
         const proxiedUserId = RootProxyDevice.extractProxiedUserId(args);
 
         const networkFactory = StandardDiscoveryNetworkFactory;
+        const credentialsStorage = new DiskCredentialsStorage(
+            this.credentialsPath,
+        );
         const credentials = new CredentialManager(
             new RootManagingCredentialRequester(
                 new MimCredentialRequester(
@@ -95,9 +98,7 @@ export class DeviceOptions extends DiscoveryOptions {
                 ),
                 proxiedUserId,
             ),
-            new DiskCredentialsStorage(
-                this.credentialsPath,
-            ),
+            credentialsStorage,
         );
 
         const device = new PendingDevice(
@@ -115,8 +116,12 @@ export class DeviceOptions extends DiscoveryOptions {
         return new RootProxyDevice(
             new CliProxy(),
             device,
-            args,
-            process.getuid(),
+            {
+                providedCredentialsPath: this.credentialsPath,
+                effectiveCredentialsPath: credentialsStorage.filePath,
+                invocationArgs: args,
+                currentUserId: process.getuid(),
+            },
         );
     }
 
