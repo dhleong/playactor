@@ -18,6 +18,10 @@ export class RootProxiedError extends Error implements Printable {
     }
 }
 
+function stopCurrentInvocationForProxy() {
+    throw new RootProxiedError();
+}
+
 export interface IRootProxyConfig {
     providedCredentialsPath?: string,
     effectiveCredentialsPath: string,
@@ -80,7 +84,7 @@ export class RootProxyDevice implements IDevice {
 
             await this.proxyCliInvocation();
 
-            throw new RootProxiedError();
+            stopCurrentInvocationForProxy();
         }
 
         // nothing to resolve
@@ -93,8 +97,10 @@ export class RootProxyDevice implements IDevice {
         if (!this.config.providedCredentialsPath) {
             // if we aren't already explicitly passing a credentials
             // file path, do so now (to avoid potential confusion)
-            baseArgs.push("--credentials");
-            baseArgs.push(this.config.effectiveCredentialsPath);
+            baseArgs.push(
+                "--credentials",
+                this.config.effectiveCredentialsPath,
+            );
         } else {
             // if we *did* provide credentials, we need to make sure the
             // full path is resolved, just in case sudo changes things
