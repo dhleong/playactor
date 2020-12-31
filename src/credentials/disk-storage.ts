@@ -9,9 +9,13 @@ export function determineDefaultFile() {
 }
 
 export class DiskCredentialsStorage implements ICredentialStorage {
+    public readonly filePath: string;
+
     constructor(
-        public readonly filePath: string = determineDefaultFile(),
-    ) {}
+        filePath?: string,
+    ) {
+        this.filePath = filePath ?? determineDefaultFile();
+    }
 
     public async read(deviceId: string): Promise<ICredentials | null> {
         const json = await this.readCredentialsMap();
