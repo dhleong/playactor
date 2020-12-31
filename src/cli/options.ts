@@ -10,6 +10,11 @@ import { IDiscoveredDevice, IDiscoveryConfig, INetworkConfig } from "../discover
 import { StandardDiscoveryNetworkFactory } from "../discovery/standard";
 import { MimCredentialRequester } from "../credentials/mim-requester";
 import { DiskCredentialsStorage } from "../credentials/disk-storage";
+import { IDevice } from "../device/model";
+import { RootManagingCredentialRequester } from "../credentials/root-managing";
+
+import { CliProxy } from "./cli-proxy";
+import { RootProxyDevice } from "./root-proxy-device";
 
 export class LoggingOptions extends Options {
     /* eslint-disable no-console */
@@ -69,7 +74,7 @@ export class DeviceOptions extends DiscoveryOptions {
     })
     public credentialsPath?: string;
 
-    public async findDevice() {
+    public async findDevice(): Promise<IDevice> {
         this.configureLogging();
 
         const { description, predicate } = this.configurePending();
@@ -78,11 +83,17 @@ export class DeviceOptions extends DiscoveryOptions {
             // TODO
         };
 
+        const args = process.argv;
+        const proxiedUserId = RootProxyDevice.extractProxiedUserId(args);
+
         const networkFactory = StandardDiscoveryNetworkFactory;
         const credentials = new CredentialManager(
-            new MimCredentialRequester(
-                networkFactory,
-                networkConfig,
+            new RootManagingCredentialRequester(
+                new MimCredentialRequester(
+                    networkFactory,
+                    networkConfig,
+                ),
+                proxiedUserId,
             ),
             new DiskCredentialsStorage(
                 this.credentialsPath,
@@ -99,8 +110,14 @@ export class DeviceOptions extends DiscoveryOptions {
         );
         await device.discover();
 
-        // if we got here, the device was found!
-        return device;
+        // if we got here, the device was found! wrap it up in case we
+        // need we need to request root privileges
+        return new RootProxyDevice(
+            new CliProxy(),
+            device,
+            args,
+            process.getuid(),
+        );
     }
 
     private configurePending() {
