@@ -15,8 +15,9 @@ import { RootManagingCredentialRequester } from "../credentials/root-managing";
 
 import { CliProxy } from "./cli-proxy";
 import { RootProxyDevice } from "./root-proxy-device";
+import { ILogging } from "./logging";
 
-export class LoggingOptions extends Options {
+export class LoggingOptions extends Options implements ILogging {
     /* eslint-disable no-console */
 
     @option({
@@ -28,6 +29,12 @@ export class LoggingOptions extends Options {
 
     public logError(error: any) {
         console.error(error);
+    }
+
+    public logInfo(message: string) {
+        // NOTE: log on stderr by default so only "results"
+        // are on stdout.
+        console.error(message);
     }
 
     public logResult(result: any) {
@@ -114,6 +121,7 @@ export class DeviceOptions extends DiscoveryOptions {
         // if we got here, the device was found! wrap it up in case we
         // need we need to request root privileges
         return new RootProxyDevice(
+            this,
             new CliProxy(),
             device,
             {

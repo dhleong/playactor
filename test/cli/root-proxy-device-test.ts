@@ -1,6 +1,7 @@
 import * as chai from "chai";
 import { expect } from "chai";
 import chaiAsPromised from "chai-as-promised";
+import { ILogging } from "../../src/cli/logging";
 
 import {
     RootProxyDevice,
@@ -11,6 +12,12 @@ import { RootMissingError } from "../../src/credentials/root-managing";
 
 chai.use(chaiAsPromised);
 chai.should();
+
+class FakeLogging implements ILogging {
+    public logError(): void { /* nop */ }
+    public logInfo(): void { /* nop */ }
+    public logResult(): void { /* nop */ }
+}
 
 describe("RootProxyDevice", () => {
     let device: RootProxyDevice;
@@ -25,6 +32,7 @@ describe("RootProxyDevice", () => {
             invocationArgs: ["wake", "--ip=9001"],
         };
         device = new RootProxyDevice(
+            new FakeLogging(),
             {
                 async invoke(invocation) {
                     proxiedInvocation = invocation;

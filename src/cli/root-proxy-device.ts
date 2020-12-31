@@ -7,6 +7,7 @@ import { IDevice } from "../device/model";
 import { INetworkConfig } from "../discovery/model";
 import { ISocketConfig } from "../socket/model";
 import { ICliProxy } from "./cli-proxy";
+import { ILogging } from "./logging";
 
 const debug = _debug("playground:cli:root");
 
@@ -43,6 +44,7 @@ export class RootProxyDevice implements IDevice {
     }
 
     constructor(
+        private readonly logging: ILogging,
         private readonly cliProxy: ICliProxy,
         private readonly delegate: IDevice,
         private readonly config: IRootProxyConfig,
@@ -109,6 +111,9 @@ export class RootProxyDevice implements IDevice {
             const oldIndex = baseArgs.indexOf(this.config.providedCredentialsPath);
             baseArgs[oldIndex] = this.resolvePath(this.config.providedCredentialsPath);
         }
+
+        this.logging.logInfo("Attempting to request root permissions now (we will relinquish them as soon as possible)");
+        this.logging.logInfo("playground needs root permissions as part of the credentials-requesting process");
 
         await this.cliProxy.invoke([
             ...baseArgs,
