@@ -1,5 +1,4 @@
 import { Command, command, param } from "clime";
-import { delayMillis } from "../../util/async";
 
 import { DeviceOptions } from "../options";
 
@@ -29,12 +28,6 @@ export default class extends Command {
             }
 
             await osk.submit();
-
-            // give the device some time to process before we disconnect
-            // TODO: this is probably best handled internally, by having
-            // the submit() task give the connection a deadline to await
-            // before closing...
-            await delayMillis(450);
         } finally {
             await connection.close();
         }

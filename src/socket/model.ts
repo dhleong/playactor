@@ -70,6 +70,14 @@ export interface IDeviceSocket {
     setCodec(encoder: IPacketCodec): void;
 
     execute<R = void>(proc: IDeviceProc<R>): Promise<R>;
+
+    /**
+     * Request that this socket stay connected for at least
+     * `extraLifeMillis` longer. May be helpful in certain procs to
+     * ensure a task is completed before we disconnect when close()
+     * is called
+     */
+    requestKeepAlive(extraLifeMillis: number): void;
 }
 
 export interface IDeviceProc<R = void> {
