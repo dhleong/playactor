@@ -62,7 +62,7 @@ export default class extends Command {
     ) {
         const keyPresses = parseKeys(keys);
         const device = await deviceSpec.findDevice();
-        const connection = await device.openConnection();
+        const connection = await device.openConnection(deviceSpec.connectionConfig);
         try {
             await connection.sendKeys(keyPresses);
         } finally {

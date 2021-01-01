@@ -11,7 +11,7 @@ import { IDiscoveredDevice, IDiscoveryConfig, INetworkConfig } from "../discover
 import { StandardDiscoveryNetworkFactory } from "../discovery/standard";
 import { MimCredentialRequester } from "../credentials/mim-requester";
 import { DiskCredentialsStorage } from "../credentials/disk-storage";
-import { IDevice } from "../device/model";
+import { IConnectionConfig, IDevice } from "../device/model";
 import { RootManagingCredentialRequester } from "../credentials/root-managing";
 
 import { SudoCliProxy } from "./cli-proxy";
@@ -19,6 +19,7 @@ import { RootProxyDevice } from "./root-proxy-device";
 import { IInputOutput } from "./io";
 import { PinAcceptingDevice } from "./pin-accepting-device";
 import { RejectingCredentialRequester } from "../credentials/rejecting-requester";
+import { CliPassCode } from "./pass-code";
 
 export class InputOutputOptions extends Options implements IInputOutput {
     /* eslint-disable no-console */
@@ -99,6 +100,13 @@ export class DeviceOptions extends DiscoveryOptions {
     public credentialsPath?: string;
 
     @option({
+        name: "pass-code",
+        flag: "p",
+        description: "Your numeric passcode, or a string of key names",
+    })
+    public passCode?: CliPassCode;
+
+    @option({
         name: "ip",
         description: "Select a specific device by IP",
     })
@@ -124,7 +132,7 @@ export class DeviceOptions extends DiscoveryOptions {
         const { description, predicate } = this.configurePending();
 
         const networkConfig: INetworkConfig = {
-            // TODO
+            ...this.connectionConfig.network,
         };
 
         const args = process.argv;
@@ -177,6 +185,18 @@ export class DeviceOptions extends DiscoveryOptions {
                 currentUserId: process.getuid(),
             },
         );
+    }
+
+    public get connectionConfig(): IConnectionConfig {
+        return {
+            network: {
+                // TODO network config
+            },
+
+            login: {
+                passCode: this.passCode?.value,
+            },
+        };
     }
 
     private configurePending() {
