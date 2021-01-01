@@ -20,6 +20,7 @@ import { IInputOutput } from "./io";
 import { PinAcceptingDevice } from "./pin-accepting-device";
 import { RejectingCredentialRequester } from "../credentials/rejecting-requester";
 import { CliPassCode } from "./pass-code";
+import { defaultSocketConfig, ISocketConfig } from "../socket/model";
 
 export class InputOutputOptions extends Options implements IInputOutput {
     /* eslint-disable no-console */
@@ -81,13 +82,49 @@ export class InputOutputOptions extends Options implements IInputOutput {
 export class DiscoveryOptions extends InputOutputOptions {
     @option({
         name: "timeout",
-        description: "How long to look for device(s) (milliseconds)",
+        description: "How long to look for device(s)",
+        placeholder: "millis",
     })
-    public deviceTimeout?: number;
+    public searchTimeout?: number;
+
+    @option({
+        name: "connect-timeout",
+        description: "How long to look wait for connection",
+        placeholder: "millis",
+    })
+    public connectTimeout = defaultSocketConfig.connectTimeoutMillis;
+
+    @option({
+        name: "bind-address",
+        description: "Bind to a specific network adapter IP, if you have multiple",
+        placeholder: "ip",
+    })
+    public localBindAddress?: string;
+
+    @option({
+        name: "bind-port",
+        description: "Bind on a specific port, if you need specific routing",
+        placeholder: "port",
+    })
+    public localBindPort?: number;
 
     public get discoveryConfig(): Partial<IDiscoveryConfig> {
         return {
-            timeoutMillis: this.deviceTimeout,
+            timeoutMillis: this.searchTimeout,
+        };
+    }
+
+    public get networkConfig(): INetworkConfig {
+        return {
+            localBindAddress: this.localBindAddress,
+            localBindPort: this.localBindPort,
+        };
+    }
+
+    public get socketConfig(): ISocketConfig {
+        return {
+            ...defaultSocketConfig,
+            connectTimeoutMillis: this.connectTimeout,
         };
     }
 }
@@ -198,9 +235,8 @@ export class DeviceOptions extends DiscoveryOptions {
 
     public get connectionConfig(): IConnectionConfig {
         return {
-            network: {
-                // TODO network config
-            },
+            network: this.networkConfig,
+            socket: this.socketConfig,
 
             login: {
                 passCode: this.passCode?.value,
