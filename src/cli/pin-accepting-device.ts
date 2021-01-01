@@ -1,3 +1,4 @@
+import { ExpectedError } from "clime";
 import _debug from "debug";
 
 import { DeviceConnection } from "../connection";
@@ -5,6 +6,7 @@ import { IConnectionConfig, IDevice } from "../device/model";
 import { INetworkConfig } from "../discovery/model";
 import { RpcError } from "../socket/helpers";
 import { LoginResultError } from "../socket/packets/incoming/login-result";
+import { ExitCode } from "./exit-codes";
 import { IInputOutput } from "./io";
 
 const debug = _debug("playground:cli:pin");
@@ -58,8 +60,16 @@ export class PinAcceptingDevice implements IDevice {
                 return this.registerWithPincode(config);
 
             case LoginResultError.PASSCODE_IS_NEEDED:
-                // TODO support passcode
-                throw e;
+                throw new ExpectedError(
+                    "Login Error: Passcode is required",
+                    ExitCode.PassCodeNeeded,
+                );
+
+            case LoginResultError.PASSCODE_IS_UNMATCHED:
+                throw new ExpectedError(
+                    "Login Error: Incorrect passcode",
+                    ExitCode.PassCodeUnmatched,
+                );
 
             default:
                 // some other error

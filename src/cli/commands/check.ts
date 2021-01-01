@@ -7,6 +7,7 @@ import {
 
 import { DeviceOptions } from "../options";
 import { DeviceStatus } from "../../discovery/model";
+import { ExitCode } from "../exit-codes";
 
 class DeviceStatusSignal extends Error implements Printable {
     constructor(
@@ -18,15 +19,15 @@ class DeviceStatusSignal extends Error implements Printable {
     public print() {
         switch (this.status) {
             case null:
-                process.exit(2);
+                process.exit(ExitCode.DeviceNotFound);
                 break;
 
             case DeviceStatus.AWAKE:
-                process.exit(0);
+                process.exit(ExitCode.DeviceAwake);
                 break;
 
             case DeviceStatus.STANDBY:
-                process.exit(1);
+                process.exit(ExitCode.DeviceStandby);
                 break;
         }
     }
