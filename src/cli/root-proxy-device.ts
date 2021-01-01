@@ -30,6 +30,17 @@ export interface IRootProxyConfig {
     currentUserId: number,
 }
 
+/**
+ * The RootProxyDevice wraps another IDevice implementation and delegates
+ * entirely to it. If `wake` or `openConnection` reject with a
+ * RootMissingError, the error will be suppressed and, if possible, the
+ * CLI invocation will be "proxied" into a new subprocess that will
+ * request root and this process will be gracefully stopped with the same
+ * exit code as the "proxied" subprocess.
+ *
+ * This class is meant exclusively for use with the CLI; API clients
+ * should almost certainly not use this.
+ */
 export class RootProxyDevice implements IDevice {
     public static extractProxiedUserId(
         args: string[],

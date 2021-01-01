@@ -13,7 +13,7 @@ import { DiskCredentialsStorage } from "../credentials/disk-storage";
 import { IDevice } from "../device/model";
 import { RootManagingCredentialRequester } from "../credentials/root-managing";
 
-import { CliProxy } from "./cli-proxy";
+import { SudoCliProxy } from "./cli-proxy";
 import { RootProxyDevice } from "./root-proxy-device";
 import { ILogging } from "./logging";
 
@@ -122,7 +122,7 @@ export class DeviceOptions extends DiscoveryOptions {
         // need we need to request root privileges
         return new RootProxyDevice(
             this,
-            new CliProxy(),
+            new SudoCliProxy(),
             device,
             {
                 providedCredentialsPath: this.credentialsPath,
