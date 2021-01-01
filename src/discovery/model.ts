@@ -30,7 +30,9 @@ export type DiscoveryKey =
     "host-id"
     | "host-type"
     | "host-request-port"
-    | "host-name";
+    | "host-name"
+    | "system-version"
+    | "device-discovery-protocol-version";
 
 export enum DiscoveryMessageType {
     SRCH = "SRCH",
@@ -49,7 +51,9 @@ export interface IDiscoveredDevice {
     address: IDeviceAddress;
 
     discoveryVersion: DiscoveryVersion;
+    systemVersion: string;
     id: string;
+    name: string;
     status: DeviceStatus;
 }
 

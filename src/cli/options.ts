@@ -104,6 +104,20 @@ export class DeviceOptions extends DiscoveryOptions {
     })
     public deviceIp?: string;
 
+    @option({
+        name: "host-name",
+        description: "Select a specific device by its host-name",
+        placeholder: "name",
+    })
+    public deviceHostName?: string;
+
+    @option({
+        name: "host-id",
+        description: "Select a specific device by its host-id",
+        placeholder: "name",
+    })
+    public deviceHostId?: string;
+
     public async findDevice(): Promise<IDevice> {
         this.configureLogging();
 
@@ -172,9 +186,14 @@ export class DeviceOptions extends DiscoveryOptions {
         if (this.deviceIp) {
             description = `device at ${this.deviceIp}`;
             predicate = device => device.address.address === this.deviceIp;
+        } else if (this.deviceHostName) {
+            description = `device named ${this.deviceHostName}`;
+            predicate = device => device.name === this.deviceHostName;
+        } else if (this.deviceHostId) {
+            description = `device with id ${this.deviceHostId}`;
+            predicate = device => device.id === this.deviceHostId;
         }
 
-        // TODO other selection mechanisms
         return { description, predicate };
     }
 }

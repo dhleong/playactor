@@ -158,7 +158,10 @@ export class UdpDiscoveryNetworkFactory implements IDiscoveryNetworkFactory {
                     address: message.sender,
 
                     discoveryVersion: message.version,
+                    systemVersion: message.data["system-version"],
+
                     id: message.data["host-id"],
+                    name: message.data["host-name"],
                     status: message.data.status as DeviceStatus,
                 });
             }
