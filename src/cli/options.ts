@@ -10,8 +10,14 @@ import { IDiscoveredDevice, IDiscoveryConfig, INetworkConfig } from "../discover
 import { StandardDiscoveryNetworkFactory } from "../discovery/standard";
 import { MimCredentialRequester } from "../credentials/mim-requester";
 import { DiskCredentialsStorage } from "../credentials/disk-storage";
+import { IDevice } from "../device/model";
+import { RootManagingCredentialRequester } from "../credentials/root-managing";
 
-export class LoggingOptions extends Options {
+import { SudoCliProxy } from "./cli-proxy";
+import { RootProxyDevice } from "./root-proxy-device";
+import { ILogging } from "./logging";
+
+export class LoggingOptions extends Options implements ILogging {
     /* eslint-disable no-console */
 
     @option({
@@ -23,6 +29,12 @@ export class LoggingOptions extends Options {
 
     public logError(error: any) {
         console.error(error);
+    }
+
+    public logInfo(message: string) {
+        // NOTE: log on stderr by default so only "results"
+        // are on stdout.
+        console.error(message);
     }
 
     public logResult(result: any) {
@@ -69,7 +81,7 @@ export class DeviceOptions extends DiscoveryOptions {
     })
     public credentialsPath?: string;
 
-    public async findDevice() {
+    public async findDevice(): Promise<IDevice> {
         this.configureLogging();
 
         const { description, predicate } = this.configurePending();
@@ -78,15 +90,22 @@ export class DeviceOptions extends DiscoveryOptions {
             // TODO
         };
 
+        const args = process.argv;
+        const proxiedUserId = RootProxyDevice.extractProxiedUserId(args);
+
         const networkFactory = StandardDiscoveryNetworkFactory;
+        const credentialsStorage = new DiskCredentialsStorage(
+            this.credentialsPath,
+        );
         const credentials = new CredentialManager(
-            new MimCredentialRequester(
-                networkFactory,
-                networkConfig,
+            new RootManagingCredentialRequester(
+                new MimCredentialRequester(
+                    networkFactory,
+                    networkConfig,
+                ),
+                proxiedUserId,
             ),
-            new DiskCredentialsStorage(
-                this.credentialsPath,
-            ),
+            credentialsStorage,
         );
 
         const device = new PendingDevice(
@@ -99,8 +118,19 @@ export class DeviceOptions extends DiscoveryOptions {
         );
         await device.discover();
 
-        // if we got here, the device was found!
-        return device;
+        // if we got here, the device was found! wrap it up in case we
+        // need we need to request root privileges
+        return new RootProxyDevice(
+            this,
+            new SudoCliProxy(),
+            device,
+            {
+                providedCredentialsPath: this.credentialsPath,
+                effectiveCredentialsPath: credentialsStorage.filePath,
+                invocationArgs: args,
+                currentUserId: process.getuid(),
+            },
+        );
     }
 
     private configurePending() {

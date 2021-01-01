@@ -1,4 +1,5 @@
 import { Command, command, metadata } from "clime";
+import { DeviceStatus } from "../../discovery/model";
 
 import { DeviceOptions } from "../options";
 
@@ -11,6 +12,12 @@ export default class extends Command {
         deviceSpec: DeviceOptions,
     ) {
         const device = await deviceSpec.findDevice();
+        const desc = await device.discover();
+        if (desc.status === DeviceStatus.STANDBY) {
+            deviceSpec.logResult("The device is already in standby");
+            return;
+        }
+
         const connection = await device.openConnection();
         try {
             await connection.standby();
