@@ -84,10 +84,11 @@ export class DiscoveryOptions extends InputOutputOptions {
 
 export class DeviceOptions extends DiscoveryOptions {
     @option({
-        name: "ip",
-        description: "Select a specific device by IP",
+        name: "no-auth",
+        description: "Don't attempt to authenticate if not already",
+        toggle: true,
     })
-    public deviceIp?: string;
+    public dontAuthenticate = false;
 
     @option({
         name: "credentials",
@@ -98,11 +99,10 @@ export class DeviceOptions extends DiscoveryOptions {
     public credentialsPath?: string;
 
     @option({
-        name: "no-auth",
-        description: "Don't attempt to authenticate if not already",
-        toggle: true,
+        name: "ip",
+        description: "Select a specific device by IP",
     })
-    public dontAuthenticate = false;
+    public deviceIp?: string;
 
     public async findDevice(): Promise<IDevice> {
         this.configureLogging();
