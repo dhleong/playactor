@@ -18,7 +18,7 @@ export default class extends Command {
             return;
         }
 
-        const connection = await device.openConnection();
+        const connection = await device.openConnection(deviceSpec.connectionConfig);
         try {
             await connection.standby();
         } finally {

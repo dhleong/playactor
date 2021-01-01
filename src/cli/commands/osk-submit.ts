@@ -20,7 +20,7 @@ export default class extends Command {
         deviceSpec: DeviceOptions,
     ) {
         const device = await deviceSpec.findDevice();
-        const connection = await device.openConnection();
+        const connection = await device.openConnection(deviceSpec.connectionConfig);
         try {
             const osk = await connection.openKeyboard();
 
