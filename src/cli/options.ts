@@ -3,6 +3,7 @@ import {
     Options,
     option,
 } from "clime";
+import readline from "readline";
 
 import { CredentialManager } from "../credentials";
 import { PendingDevice } from "../device/pending";
@@ -15,9 +16,10 @@ import { RootManagingCredentialRequester } from "../credentials/root-managing";
 
 import { SudoCliProxy } from "./cli-proxy";
 import { RootProxyDevice } from "./root-proxy-device";
-import { ILogging } from "./logging";
+import { IInputOutput } from "./io";
+import { PinAcceptingDevice } from "./pin-accepting-device";
 
-export class LoggingOptions extends Options implements ILogging {
+export class InputOutputOptions extends Options implements IInputOutput {
     /* eslint-disable no-console */
 
     @option({
@@ -45,6 +47,19 @@ export class LoggingOptions extends Options implements ILogging {
         }
     }
 
+    public prompt(promptText: string) {
+        return new Promise<string>(resolve => {
+            const prompter = readline.createInterface({
+                input: process.stdin,
+                output: process.stdout,
+            });
+            prompter.question(promptText, result => {
+                prompter.close();
+                resolve(result);
+            });
+        });
+    }
+
     public async configureLogging() {
         if (this.enableDebug) {
             debug.enable("playground:*");
@@ -52,7 +67,7 @@ export class LoggingOptions extends Options implements ILogging {
     }
 }
 
-export class DiscoveryOptions extends LoggingOptions {
+export class DiscoveryOptions extends InputOutputOptions {
     @option({
         name: "timeout",
         description: "How long to look for device(s) (milliseconds)",
@@ -119,11 +134,12 @@ export class DeviceOptions extends DiscoveryOptions {
         await device.discover();
 
         // if we got here, the device was found! wrap it up in case we
-        // need we need to request root privileges
+        // need we need to request root privileges or something to
+        // complete the login process
         return new RootProxyDevice(
             this,
             new SudoCliProxy(),
-            device,
+            new PinAcceptingDevice(this, device),
             {
                 providedCredentialsPath: this.credentialsPath,
                 effectiveCredentialsPath: credentialsStorage.filePath,

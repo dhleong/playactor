@@ -1,10 +1,9 @@
 import { DeviceConnection } from "../connection";
-import { IDiscoveredDevice, INetworkConfig } from "../discovery/model";
-import { ISocketConfig } from "../socket/model";
+import { IDiscoveredDevice } from "../discovery/model";
 import { openSocket } from "../socket/open";
 import { IWakerFactory } from "../waker";
 
-import { DeviceCapability, IResolvedDevice } from "./model";
+import { DeviceCapability, IConnectionConfig, IResolvedDevice } from "./model";
 
 export class ResolvedDevice implements IResolvedDevice {
     constructor(
@@ -20,10 +19,7 @@ export class ResolvedDevice implements IResolvedDevice {
         await this.startWaker();
     }
 
-    public async openConnection(
-        socketConfig?: ISocketConfig,
-        networkConfig?: INetworkConfig,
-    ) {
+    public async openConnection(config: IConnectionConfig = {}) {
         const waker = await this.startWaker();
         const creds = await waker.credentials.getForDevice(
             this.description,
@@ -33,8 +29,9 @@ export class ResolvedDevice implements IResolvedDevice {
             waker.networkFactory,
             this.description,
             creds,
-            socketConfig,
-            networkConfig,
+            config.socket,
+            config.network,
+            config.login,
         );
 
         return new DeviceConnection(socket);
