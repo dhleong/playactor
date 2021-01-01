@@ -7,6 +7,7 @@ import { delayMillis } from "../util/async";
 import { IWakerNetwork, IWakerNetworkFactory } from "../waker/model";
 
 import { defaultSocketConfig, IDeviceSocket, ISocketConfig } from "./model";
+import { ILoginConfig } from "./packets/outgoing/login";
 import { HandshakeProc } from "./proc/handshake";
 import { LoginProc } from "./proc/login";
 import { TcpDeviceSocket } from "./tcp";
@@ -34,6 +35,7 @@ async function attemptOpen(
     device: IDiscoveredDevice,
     credentials: ICredentials,
     config: ISocketConfig,
+    loginConfig: Partial<ILoginConfig> = {},
 ) {
     // send some packets to make sure the device is willing to accept our
     // TCP connection
@@ -56,7 +58,7 @@ async function attemptOpen(
     const socket = await openConnection(device, config);
 
     await socket.execute(new HandshakeProc());
-    await socket.execute(new LoginProc(credentials));
+    await socket.execute(new LoginProc(credentials, loginConfig));
 
     return socket;
 }
@@ -71,6 +73,7 @@ export async function openSocket(
     credentials: ICredentials,
     socketConfig: Partial<ISocketConfig> = {},
     networkConfig: INetworkConfig = {},
+    loginConfig: Partial<ILoginConfig> = {},
 ) {
     const waker = wakerFactory.create(networkConfig);
     const mySocketConfig = {
@@ -87,6 +90,7 @@ export async function openSocket(
                 device,
                 credentials,
                 mySocketConfig,
+                loginConfig,
             );
         } catch (e) {
             if (isRetryable(e) && i + 1 !== mySocketConfig.maxRetries) {

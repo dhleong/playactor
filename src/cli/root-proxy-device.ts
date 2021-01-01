@@ -3,11 +3,10 @@ import _debug from "debug";
 import { resolve as realResolvePath } from "path";
 
 import { RootMissingError } from "../credentials/root-managing";
-import { IDevice } from "../device/model";
+import { IConnectionConfig, IDevice } from "../device/model";
 import { INetworkConfig } from "../discovery/model";
-import { ISocketConfig } from "../socket/model";
 import { ICliProxy } from "./cli-proxy";
-import { ILogging } from "./logging";
+import { IInputOutput } from "./io";
 
 const debug = _debug("playground:cli:root");
 
@@ -55,7 +54,7 @@ export class RootProxyDevice implements IDevice {
     }
 
     constructor(
-        private readonly logging: ILogging,
+        private readonly io: IInputOutput,
         private readonly cliProxy: ICliProxy,
         private readonly delegate: IDevice,
         private readonly config: IRootProxyConfig,
@@ -74,9 +73,9 @@ export class RootProxyDevice implements IDevice {
         }
     }
 
-    public async openConnection(socketConfig?: ISocketConfig) {
+    public async openConnection(config: IConnectionConfig = {}) {
         try {
-            return await this.delegate.openConnection(socketConfig);
+            return await this.delegate.openConnection(config);
         } catch (e) {
             await this.tryResolveError(e);
 
@@ -123,8 +122,8 @@ export class RootProxyDevice implements IDevice {
             baseArgs[oldIndex] = this.resolvePath(this.config.providedCredentialsPath);
         }
 
-        this.logging.logInfo("Attempting to request root permissions now (we will relinquish them as soon as possible)");
-        this.logging.logInfo("playground needs root permissions as part of the credentials-requesting process");
+        this.io.logInfo("Attempting to request root permissions now (we will relinquish them as soon as possible)");
+        this.io.logInfo("playground needs root permissions as part of the credentials-requesting process");
 
         await this.cliProxy.invoke([
             ...baseArgs,

@@ -1,9 +1,16 @@
 import { DeviceConnection } from "../connection";
 import { IDiscoveredDevice, INetworkConfig } from "../discovery/model";
 import { ISocketConfig } from "../socket/model";
+import { ILoginConfig } from "../socket/packets/outgoing/login";
 
 export enum DeviceCapability {
     WAKE,
+}
+
+export interface IConnectionConfig {
+    socket?: ISocketConfig;
+    network?: INetworkConfig;
+    login?: Partial<ILoginConfig>;
 }
 
 export interface IDevice {
@@ -26,9 +33,7 @@ export interface IDevice {
      * Open a connection to the device for additional features,
      * waking it if necessary.
      */
-    openConnection(
-        socketConfig?: ISocketConfig,
-    ): Promise<DeviceConnection>;
+    openConnection(config?: IConnectionConfig): Promise<DeviceConnection>;
 }
 
 export interface IResolvedDevice extends IDevice {

@@ -6,14 +6,6 @@ import { ILoginConfig, LoginPacket } from "../packets/outgoing/login";
 import { StatusPacket } from "../packets/outgoing/status";
 import { PacketType } from "../packets/types";
 
-export class LoginError extends Error {
-    constructor(
-        public readonly code: string,
-    ) {
-        super(`Login error: ${code}`);
-    }
-}
-
 export class LoginProc implements IDeviceProc {
     constructor(
         private readonly credentials: ICredentials,
