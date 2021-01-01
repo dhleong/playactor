@@ -2,10 +2,13 @@ import { DeviceStatus, IDeviceAddress, IDiscoveredDevice } from "../../src/disco
 import { DiscoveryVersion, DiscoveryVersions } from "../../src/protocol";
 import {
     IDeviceProc,
+    IDeviceProtocol,
     IDeviceSocket,
     IPacket,
     IPacketCodec,
+    PlaintextCodec,
 } from "../../src/socket/model";
+import { DeviceProtocolV1 } from "../../src/socket/protocol/v1";
 
 export class FakeSocket implements IDeviceSocket {
     public readonly protocolVersion = 0x42;
@@ -17,6 +20,10 @@ export class FakeSocket implements IDeviceSocket {
 
     public sent: IPacket[] = [];
 
+    constructor(
+        private readonly protocol: IDeviceProtocol = DeviceProtocolV1,
+    ) {}
+
     public get isConnected() {
         return !this.isClosed;
     }
@@ -26,7 +33,19 @@ export class FakeSocket implements IDeviceSocket {
     }
 
     public async* receive(): AsyncIterable<IPacket> {
-        yield* this.enqueued;
+        // yield* this.enqueued;
+        for (const packet of this.enqueued) {
+            const reader = this.protocol.createPacketReader();
+
+            try {
+                // try a more realistic parsing
+                reader.read(packet.toBuffer());
+                yield reader.get(PlaintextCodec);
+            } catch (e) {
+                // packet doesn't support toBuffer...
+                yield packet;
+            }
+        }
     }
 
     public async send(packet: IPacket) {

@@ -1,5 +1,6 @@
 import { IDeviceSocket, IPacket } from "./model";
 import { IResultPacket } from "./packets/base";
+import { UnsupportedIncomingPacket } from "./packets/incoming/unsupported";
 
 export async function receiveWhere(
     socket: IDeviceSocket,
@@ -42,8 +43,14 @@ export async function performRpc<R extends IResultPacket>(
         resultType,
     );
 
+    if (resultPacket instanceof UnsupportedIncomingPacket) {
+        throw new Error(`Unexpectedly received UnsupportedIncomingPacket for ${resultType}`);
+    }
+
     const { errorCode, result } = resultPacket;
-    if (result !== 0) {
+    if (result === undefined) {
+        throw new Error(`Received packet has no result: ${resultPacket.constructor.name} ${JSON.stringify(resultPacket)}`);
+    } else if (result !== 0) {
         throw new RpcError(result, errorCode);
     }
 

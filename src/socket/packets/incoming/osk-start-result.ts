@@ -41,7 +41,7 @@ export class OskStartResultPacket extends IncomingResultPacket {
     }
 
     public get actionType() {
-        return ((this.oskType & 0x40) >>> 4) as OskActionType;
+        return ((this.oskType & 0x0F0) >>> 4) as OskActionType;
     }
 
     public get inputType() {

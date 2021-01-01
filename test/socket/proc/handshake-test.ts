@@ -23,7 +23,6 @@ describe("HandshakeProc", () => {
         sock.enqueued = [
             new ServerHelloPacket(
                 new PacketBuilder(36)
-                    .writeInt(28)
                     .writeInt(PacketType.Hello)
                     .build(),
             ),

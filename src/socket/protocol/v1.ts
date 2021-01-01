@@ -8,6 +8,7 @@ import {
 } from "../model";
 import { IncomingResultPacket } from "../packets/base";
 import { LoginResultPacket } from "../packets/incoming/login-result";
+import { OskStartResultPacket } from "../packets/incoming/osk-start-result";
 import { ServerHelloPacket } from "../packets/incoming/server-hello";
 import { StandbyResultPacket } from "../packets/incoming/standby-result";
 import { UnsupportedIncomingPacket } from "../packets/incoming/unsupported";
@@ -24,6 +25,7 @@ interface PacketConstructor {
 const packets: {[key: number]: PacketConstructor} = {
     [PacketType.Hello]: ServerHelloPacket,
     [PacketType.LoginResult]: LoginResultPacket,
+    [PacketType.OskStartResult]: OskStartResultPacket,
     [PacketType.StandbyResult]: StandbyResultPacket,
     [PacketType.ServerStatus]: IncomingResultPacket,
 };
