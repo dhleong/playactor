@@ -18,6 +18,7 @@ import { SudoCliProxy } from "./cli-proxy";
 import { RootProxyDevice } from "./root-proxy-device";
 import { IInputOutput } from "./io";
 import { PinAcceptingDevice } from "./pin-accepting-device";
+import { RejectingCredentialRequester } from "../credentials/rejecting-requester";
 
 export class InputOutputOptions extends Options implements IInputOutput {
     /* eslint-disable no-console */
@@ -96,6 +97,13 @@ export class DeviceOptions extends DiscoveryOptions {
     })
     public credentialsPath?: string;
 
+    @option({
+        name: "no-auth",
+        description: "Don't attempt to authenticate if not already",
+        toggle: true,
+    })
+    public dontAuthenticate = false;
+
     public async findDevice(): Promise<IDevice> {
         this.configureLogging();
 
@@ -112,14 +120,17 @@ export class DeviceOptions extends DiscoveryOptions {
         const credentialsStorage = new DiskCredentialsStorage(
             this.credentialsPath,
         );
-        const credentials = new CredentialManager(
-            new RootManagingCredentialRequester(
+        const credentialsRequester = this.dontAuthenticate
+            ? new RejectingCredentialRequester("Not authenticated")
+            : new RootManagingCredentialRequester(
                 new MimCredentialRequester(
                     networkFactory,
                     networkConfig,
                 ),
                 proxiedUserId,
-            ),
+            );
+        const credentials = new CredentialManager(
+            credentialsRequester,
             credentialsStorage,
         );
 
@@ -132,6 +143,11 @@ export class DeviceOptions extends DiscoveryOptions {
             credentials,
         );
         await device.discover();
+
+        if (this.dontAuthenticate) {
+            // no sense doing extra work
+            return device;
+        }
 
         // if we got here, the device was found! wrap it up in case we
         // need we need to request root privileges or something to
