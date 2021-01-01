@@ -66,6 +66,9 @@ export class OnScreenKeyboard {
 
         await this.socket.send(new OskControlPacket(OskCommand.Submit));
         this.isValid = false;
+
+        // give the device some time to process before we disconnect
+        this.socket.requestKeepAlive(450);
     }
 
     private ensureValid() {

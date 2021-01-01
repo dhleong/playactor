@@ -3,7 +3,7 @@ import net from "net";
 
 import { IDiscoveredDevice } from "../discovery/model";
 import { DiscoveryVersions } from "../protocol";
-import { CancellableAsyncSink } from "../util/async";
+import { CancellableAsyncSink, delayMillis } from "../util/async";
 import { BufferPacketProcessor } from "./base";
 
 import {
@@ -64,6 +64,7 @@ export class TcpDeviceSocket implements IDeviceSocket {
     private codec: IPacketCodec = PlaintextCodec;
     private readonly processor: BufferPacketProcessor;
 
+    private stayAliveUntil = 0;
     private isClosed = false;
 
     constructor(
@@ -111,6 +112,13 @@ export class TcpDeviceSocket implements IDeviceSocket {
         return receiver;
     }
 
+    public requestKeepAlive(extraLifeMillis: number) {
+        this.stayAliveUntil = Math.max(
+            this.stayAliveUntil,
+            Date.now() + extraLifeMillis,
+        );
+    }
+
     public send(packet: IPacket) {
         const buffer = packet.toBuffer();
         const encoded = this.codec.encode(buffer);
@@ -136,6 +144,12 @@ export class TcpDeviceSocket implements IDeviceSocket {
     }
 
     public async close() {
+        const extraLife = this.stayAliveUntil - Date.now();
+        if (extraLife > 0) {
+            debug("waiting", extraLife, "millis before closing");
+            await delayMillis(extraLife);
+        }
+
         const politeDisconnect = this.protocol.requestDisconnect;
         if (politeDisconnect) {
             debug("requesting polite disconnect");
