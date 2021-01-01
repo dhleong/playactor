@@ -31,6 +31,13 @@ export class InputOutputOptions extends Options implements IInputOutput {
     })
     public enableDebug = false;
 
+    @option({
+        name: "machine-friendly",
+        description: "Enable machine-friendly output",
+        toggle: true,
+    })
+    public machineFriendly = false;
+
     public logError(error: any) {
         console.error(error);
     }
@@ -44,6 +51,8 @@ export class InputOutputOptions extends Options implements IInputOutput {
     public logResult(result: any) {
         if (typeof result === "string") {
             console.log(result);
+        } else if (this.machineFriendly) {
+            console.log(JSON.stringify(result));
         } else {
             console.log(JSON.stringify(result, null, 2));
         }
