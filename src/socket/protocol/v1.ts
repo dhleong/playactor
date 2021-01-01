@@ -10,6 +10,7 @@ import { IncomingResultPacket } from "../packets/base";
 import { LoginResultPacket } from "../packets/incoming/login-result";
 import { ServerHelloPacket } from "../packets/incoming/server-hello";
 import { StandbyResultPacket } from "../packets/incoming/standby-result";
+import { UnsupportedIncomingPacket } from "../packets/incoming/unsupported";
 import { ByePacket } from "../packets/outgoing/bye";
 import { StatusPacket } from "../packets/outgoing/status";
 import { PacketType } from "../packets/types";
@@ -40,9 +41,7 @@ export class PacketReaderV1 implements IPacketReader {
         const type = buf.readInt32LE(PACKET_TYPE_OFFSET);
         const Constructor = packets[type];
         if (!Constructor) {
-            // TODO we could perhaps do this in read() and just abandon
-            // unsupported packet types
-            throw new Error("Unsupported packet type");
+            return new UnsupportedIncomingPacket(buf);
         }
 
         return new Constructor(buf);
