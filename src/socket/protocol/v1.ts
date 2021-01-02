@@ -1,3 +1,5 @@
+import _debug from "debug";
+
 import {
     IDeviceProtocol,
     IDeviceSocket,
@@ -30,6 +32,8 @@ const packets: {[key: number]: PacketConstructor} = {
     [PacketType.ServerStatus]: IncomingResultPacket,
 };
 
+const debug = _debug("playground:packets:v1");
+
 export class PacketReaderV1 implements IPacketReader {
     private readonly lengthDelimiter = new LengthDelimitedBufferReader();
 
@@ -43,6 +47,7 @@ export class PacketReaderV1 implements IPacketReader {
         const type = buf.readInt32LE(PACKET_TYPE_OFFSET);
         const Constructor = packets[type];
         if (!Constructor) {
+            debug(`received unsupported packet[${type}]: `, buf);
             return new UnsupportedIncomingPacket(buf);
         }
 
