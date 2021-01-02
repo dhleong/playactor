@@ -33,7 +33,6 @@ export class FakeSocket implements IDeviceSocket {
     }
 
     public async* receive(): AsyncIterable<IPacket> {
-        // yield* this.enqueued;
         for (const packet of this.enqueued) {
             const reader = this.protocol.createPacketReader();
 
