@@ -57,6 +57,23 @@ describe("BufferPacketProcessor", () => {
         );
     });
 
+    it("handles receiving a partial header", () => {
+        const first = new PacketBuilder(8)
+            .writeInt(42)
+            .build();
+        processor.onDataReceived(
+            first.slice(0, 2),
+        );
+        received.should.be.empty;
+
+        processor.onDataReceived(
+            first.slice(2),
+        );
+        received.should.containSubset([
+            { type: 42 },
+        ]);
+    });
+
     it("handles receiving multiple packets at once", () => {
         const first = new PacketBuilder(8)
             .writeInt(42)

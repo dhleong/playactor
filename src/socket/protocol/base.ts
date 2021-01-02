@@ -1,5 +1,7 @@
 import { PacketReadState } from "../model";
 
+const minPacketLength = 4;
+
 export class LengthDelimitedBufferReader {
     private currentBuffer?: Buffer;
 
@@ -8,6 +10,10 @@ export class LengthDelimitedBufferReader {
             this.currentBuffer = Buffer.concat([this.currentBuffer, data]);
         } else {
             this.currentBuffer = data;
+        }
+
+        if (this.currentBuffer.length < minPacketLength) {
+            return PacketReadState.PENDING;
         }
 
         if (this.currentBuffer.length >= this.expectedLength) {

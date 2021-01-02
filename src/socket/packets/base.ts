@@ -37,7 +37,7 @@ export class IncomingResultPacket
     public readonly errorCode?: string;
 
     constructor(
-        data: Buffer,
+        private readonly data: Buffer,
         resultToErrorCode: {[result: number]: string} = {},
     ) {
         super();
@@ -47,6 +47,10 @@ export class IncomingResultPacket
         if (this.result !== 0) {
             this.errorCode = resultToErrorCode[this.result] ?? "UNKNOWN";
         }
+    }
+
+    public toBuffer() {
+        return this.data;
     }
 }
 
