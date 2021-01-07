@@ -7,7 +7,12 @@ import readline from "readline";
 
 import { CredentialManager } from "../credentials";
 import { PendingDevice } from "../device/pending";
-import { IDiscoveredDevice, IDiscoveryConfig, INetworkConfig } from "../discovery/model";
+import {
+    defaultDiscoveryConfig,
+    IDiscoveredDevice,
+    IDiscoveryConfig,
+    INetworkConfig,
+} from "../discovery/model";
 import { StandardDiscoveryNetworkFactory } from "../discovery/standard";
 import { MimCredentialRequester } from "../credentials/mim-requester";
 import { DiskCredentialsStorage } from "../credentials/disk-storage";
@@ -85,7 +90,7 @@ export class DiscoveryOptions extends InputOutputOptions {
         description: "How long to look for device(s)",
         placeholder: "millis",
     })
-    public searchTimeout?: number;
+    public searchTimeout: number = defaultDiscoveryConfig.timeoutMillis;
 
     @option({
         name: "connect-timeout",
