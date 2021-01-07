@@ -1,9 +1,13 @@
 import * as chai from "chai";
+import { fake } from "sinon";
+import sinonChai from "sinon-chai";
 import * as FakeTimers from "@sinonjs/fake-timers";
 
+import { toArray } from "ix/asynciterable";
 import { Discovery } from "../src/discovery";
 import { IDiscoveryNetwork } from "../src/discovery/model";
 
+chai.use(sinonChai);
 chai.should();
 
 class MockNetwork implements IDiscoveryNetwork {
@@ -35,16 +39,20 @@ function ignore(v: any) {
 describe("Discovery", () => {
     let clock: FakeTimers.InstalledClock;
     let discovery: Discovery;
-    // let lastNetwork: IDiscoveryNetwork;
+    let lastNetwork: IDiscoveryNetwork;
 
     beforeEach(() => {
         clock = FakeTimers.install();
-        discovery = new Discovery({}, {
+        lastNetwork = new MockNetwork();
+        discovery = new Discovery({
+            pingIntervalMillis: 5000,
+            timeoutMillis: 30000,
+        }, {
             createDevices() {
-                return /* lastNetwork = */ new MockNetwork();
+                return lastNetwork;
             },
             createMessages() {
-                return /* lastNetwork = */ new MockNetwork();
+                return lastNetwork;
             },
         });
     });
@@ -66,6 +74,25 @@ describe("Discovery", () => {
             await clock.runAllAsync();
             await promise;
             state.done.should.be.true;
+        });
+
+        it("sends pings at appropriate intervals", async () => {
+            const ping = fake();
+            lastNetwork.ping = ping;
+
+            const promise = toArray(discovery.discover());
+            promise.then(() => {}); // ensure it starts running
+
+            // we should start with a ping right away
+            await clock.tickAsync(100);
+            ping.should.have.been.calledOnce;
+
+            // we've configured above for every 5s:
+            await clock.tickAsync(4900);
+            ping.should.have.been.calledTwice;
+
+            clock.tickAsync(25000);
+            await promise;
         });
     });
 });

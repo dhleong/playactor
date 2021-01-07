@@ -38,8 +38,9 @@ export class Discovery {
             sink.write(device);
         });
 
+        network.ping(); // send an initial ping immediately
         const discoverInterval = setInterval(() => {
-            debug("sending network discovery ping");
+            debug("sending subsequent network discovery ping");
             network.ping();
         }, fullConfig.pingIntervalMillis);
 

@@ -93,7 +93,7 @@ export class UdpDiscoveryNetwork implements IDiscoveryNetwork {
         });
 
         debug(
-            "send ping:", message, " to ",
+            "send:", message, " to ",
             recipientAddress, ":", recipientPort,
         );
         this.socket.send(message, recipientPort, recipientAddress);
