@@ -1,8 +1,7 @@
 import _debug from "debug";
 import net from "net";
 
-import { IDiscoveredDevice } from "../discovery/model";
-import { DiscoveryVersions } from "../protocol";
+import { DeviceType, IDiscoveredDevice } from "../discovery/model";
 import { CancellableAsyncSink, delayMillis } from "../util/async";
 import { BufferPacketProcessor } from "./base";
 
@@ -17,14 +16,9 @@ import {
 } from "./model";
 import { DeviceProtocolV1 } from "./protocol/v1";
 
-const socketPortsByVersion = {
-    [DiscoveryVersions.PS4]: 997,
-    [DiscoveryVersions.PS5]: undefined,
-};
-
 const protocolsByVersion = {
-    [DiscoveryVersions.PS4]: DeviceProtocolV1,
-    [DiscoveryVersions.PS5]: undefined,
+    [DeviceType.PS4]: DeviceProtocolV1,
+    [DeviceType.PS5]: undefined,
 };
 
 const debug = _debug("playground:socket:tcp");
@@ -34,14 +28,14 @@ export class TcpDeviceSocket implements IDeviceSocket {
         device: IDiscoveredDevice,
         config: ISocketConfig,
     ) {
-        const port = socketPortsByVersion[device.discoveryVersion];
+        const port = device.hostRequestPort;
         if (!port) {
             throw new Error(`No port known for protocol ${device.discoveryVersion}`);
         }
 
-        const protocol = protocolsByVersion[device.discoveryVersion];
+        const protocol = protocolsByVersion[device.type];
         if (!protocol) {
-            throw new Error(`No protocol known version ${device.discoveryVersion}`);
+            throw new Error(`No protocol known device ${device.type}`);
         }
 
         return new Promise<TcpDeviceSocket>((resolve, reject) => {

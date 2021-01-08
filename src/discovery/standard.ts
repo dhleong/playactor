@@ -1,7 +1,9 @@
 import { DiscoveryVersions } from "../protocol";
+import { wakePortsByType } from "../waker/udp";
 
 import { CompositeDiscoveryNetwork } from "./composite";
 import {
+    DeviceType,
     IDiscoveryNetwork,
     IDiscoveryNetworkFactory,
     INetworkConfig,
@@ -11,8 +13,14 @@ import {
 import { UdpDiscoveryNetworkFactory } from "./udp";
 
 const standardFactories = [
-    new UdpDiscoveryNetworkFactory(987, DiscoveryVersions.PS4),
-    new UdpDiscoveryNetworkFactory(9302, DiscoveryVersions.PS5),
+    new UdpDiscoveryNetworkFactory(
+        wakePortsByType[DeviceType.PS4],
+        DiscoveryVersions.PS4,
+    ),
+    new UdpDiscoveryNetworkFactory(
+        wakePortsByType[DeviceType.PS5],
+        DiscoveryVersions.PS5,
+    ),
 ];
 
 export const StandardDiscoveryNetworkFactory: IDiscoveryNetworkFactory = {

@@ -7,9 +7,8 @@ import {
     IDiscoveryNetworkFactory,
     INetworkConfig,
 } from "../discovery/model";
-import { DiscoveryVersions } from "../protocol";
 import { CancellableAsyncSink } from "../util/async";
-import { wakePortsByVersion } from "../waker/udp";
+import { wakePortsByType } from "../waker/udp";
 import { ICredentialRequester, ICredentials } from "./model";
 
 export interface IEmulatorOptions {
@@ -46,14 +45,10 @@ export class MimCredentialRequester implements ICredentialRequester {
 
     public async requestForDevice(device: IDiscoveredDevice): Promise<ICredentials> {
         const sink = new CancellableAsyncSink<IDiscoveryMessage>();
-        const localBindPort = wakePortsByVersion[device.discoveryVersion];
+        const localBindPort = wakePortsByType[device.type];
         if (!localBindPort) {
             throw new Error(`Unexpected discovery protocol: ${device.discoveryVersion}`);
         }
-
-        const hostType = device.discoveryVersion === DiscoveryVersions.PS4
-            ? "PS4"
-            : "PS5"; // ?
 
         const network = this.networkFactory.createMessages({
             ...this.networkConfig,
@@ -68,7 +63,7 @@ export class MimCredentialRequester implements ICredentialRequester {
         return this.emulateUntilWoken(
             sink,
             network,
-            hostType,
+            device.type,
             localBindPort,
         );
     }

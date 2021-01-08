@@ -1,8 +1,8 @@
 import _debug from "debug";
 
 import { ICredentials } from "../credentials/model";
-import { IDiscoveredDevice, INetworkConfig } from "../discovery/model";
-import { DiscoveryVersions, formatDiscoveryMessage } from "../protocol";
+import { DeviceType, IDiscoveredDevice, INetworkConfig } from "../discovery/model";
+import { formatDiscoveryMessage } from "../protocol";
 import { delayMillis } from "../util/async";
 import { IWakerNetwork, IWakerNetworkFactory } from "../waker/model";
 
@@ -18,8 +18,8 @@ function openConnection(
     device: IDiscoveredDevice,
     config: ISocketConfig,
 ): Promise<IDeviceSocket> {
-    switch (device.discoveryVersion) {
-        case DiscoveryVersions.PS4:
+    switch (device.type) {
+        case DeviceType.PS4:
             return TcpDeviceSocket.connectTo(
                 device,
                 config,

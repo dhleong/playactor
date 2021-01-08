@@ -1,12 +1,11 @@
 import dgram from "dgram";
 
-import { IDiscoveredDevice, INetworkConfig } from "../discovery/model";
-import { DiscoveryVersions } from "../protocol";
+import { DeviceType, IDiscoveredDevice, INetworkConfig } from "../discovery/model";
 import { IWakerNetwork, IWakerNetworkFactory } from "./model";
 
-export const wakePortsByVersion = {
-    [DiscoveryVersions.PS4]: 987,
-    [DiscoveryVersions.PS5]: 9302,
+export const wakePortsByType = {
+    [DeviceType.PS4]: 987,
+    [DeviceType.PS5]: 9302,
 };
 
 export class UdpWakerNetwork implements IWakerNetwork {
@@ -22,7 +21,7 @@ export class UdpWakerNetwork implements IWakerNetwork {
 
     public async sendTo(device: IDiscoveredDevice, message: Buffer) {
         const socket = this.socket ?? await this.open();
-        const wakePort = wakePortsByVersion[device.discoveryVersion];
+        const wakePort = wakePortsByType[device.type];
         if (!wakePort) {
             throw new Error(`Unexpected discovery protocol: ${device.discoveryVersion}`);
         }
