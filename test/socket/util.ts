@@ -1,4 +1,9 @@
-import { DeviceStatus, IDeviceAddress, IDiscoveredDevice } from "../../src/discovery/model";
+import {
+    DeviceStatus,
+    DeviceType,
+    IDeviceAddress,
+    IDiscoveredDevice,
+} from "../../src/discovery/model";
 import { DiscoveryVersion, DiscoveryVersions } from "../../src/protocol";
 import {
     IDeviceProc,
@@ -66,6 +71,8 @@ export class FakeSocket implements IDeviceSocket {
 }
 
 export class FakeDiscoveredDevice implements IDiscoveredDevice {
+    public hostRequestPort = 987;
+    public type = DeviceType.PS4;
     public address: IDeviceAddress = { address: "", port: 42, family: "IPv4" };
     public discoveryVersion: DiscoveryVersion = DiscoveryVersions.PS4;
     public systemVersion = "0";
