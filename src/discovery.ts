@@ -33,9 +33,14 @@ export class Discovery {
         const fullConfig = { ...this.discoveryConfig, ...discoveryConfig };
         debug("discover(", fullConfig, ")");
 
+        const discoveredIds = new Set<string>();
+
         const sink = new CancellableAsyncSink<IDiscoveredDevice>();
         const network = this.networkFactory.createDevices(networkConfig, device => {
-            sink.write(device);
+            if (!discoveredIds.has(device.id)) {
+                discoveredIds.add(device.id);
+                sink.write(device);
+            }
         });
 
         network.ping(); // send an initial ping immediately
