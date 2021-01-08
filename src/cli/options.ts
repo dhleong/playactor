@@ -27,6 +27,8 @@ import { RejectingCredentialRequester } from "../credentials/rejecting-requester
 import { CliPassCode } from "./pass-code";
 import { defaultSocketConfig, ISocketConfig } from "../socket/model";
 
+const log = debug("playground:cli:options");
+
 export class InputOutputOptions extends Options implements IInputOutput {
     /* eslint-disable no-console */
 
@@ -87,13 +89,15 @@ export class InputOutputOptions extends Options implements IInputOutput {
 export class DiscoveryOptions extends InputOutputOptions {
     @option({
         name: "timeout",
+        default: defaultDiscoveryConfig.timeoutMillis,
         description: "How long to look for device(s)",
         placeholder: "millis",
     })
-    public searchTimeout: number = defaultDiscoveryConfig.timeoutMillis;
+    public searchTimeout = defaultDiscoveryConfig.timeoutMillis;
 
     @option({
         name: "connect-timeout",
+        default: defaultSocketConfig.connectTimeoutMillis,
         description: "How long to look wait for connection",
         placeholder: "millis",
     })
@@ -179,6 +183,7 @@ export class DeviceOptions extends DiscoveryOptions {
 
     public async findDevice(): Promise<IDevice> {
         this.configureLogging();
+        log("findDevice with:", this);
 
         const { description, predicate } = this.configurePending();
 
