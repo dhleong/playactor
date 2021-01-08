@@ -6,6 +6,7 @@ import { parseMessage } from "./messages";
 
 import {
     DeviceStatus,
+    DeviceType,
     IDiscoveryNetwork,
     IDiscoveryNetworkFactory,
     INetworkConfig,
@@ -156,6 +157,7 @@ export class UdpDiscoveryNetworkFactory implements IDiscoveryNetworkFactory {
             if (message.type === "DEVICE") {
                 onDevice({
                     address: message.sender,
+                    hostRequestPort: parseInt(message.data["host-request-port"], 10),
 
                     discoveryVersion: message.version,
                     systemVersion: message.data["system-version"],
@@ -163,6 +165,7 @@ export class UdpDiscoveryNetworkFactory implements IDiscoveryNetworkFactory {
                     id: message.data["host-id"],
                     name: message.data["host-name"],
                     status: message.data.status as DeviceStatus,
+                    type: message.data["host-type"] as DeviceType,
                 });
             }
         });

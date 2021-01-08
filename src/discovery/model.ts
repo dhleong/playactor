@@ -47,14 +47,21 @@ export interface IDiscoveryMessage {
     data: Record<DiscoveryKey | string, string>;
 }
 
+export enum DeviceType {
+    PS4 = "PS4",
+    PS5 = "PS5",
+}
+
 export interface IDiscoveredDevice {
     address: IDeviceAddress;
+    hostRequestPort: number;
 
     discoveryVersion: DiscoveryVersion;
     systemVersion: string;
     id: string;
     name: string;
     status: DeviceStatus;
+    type: DeviceType;
 }
 
 export type OnDeviceDiscoveredHandler = (device: IDiscoveredDevice) => void;
