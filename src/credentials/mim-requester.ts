@@ -60,6 +60,7 @@ export class MimCredentialRequester implements ICredentialRequester {
 
         sink.onCancel = () => network.close();
 
+        debug("emulating device; awaiting WAKE...");
         return this.emulateUntilWoken(
             sink,
             network,

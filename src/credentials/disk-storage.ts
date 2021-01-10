@@ -1,12 +1,15 @@
+import _debug from "debug";
 import fs from "fs-extra";
 import { homedir } from "os";
-import { join as joinPath } from "path";
+import { join as joinPath, dirname } from "path";
 
 import { ICredentials, ICredentialStorage } from "./model";
 
 export function determineDefaultFile() {
     return joinPath(homedir(), ".config", "playground", "credentials.json");
 }
+
+const debug = _debug("playground:credentials:disk");
 
 export class DiskCredentialsStorage implements ICredentialStorage {
     public readonly filePath: string;
@@ -32,12 +35,15 @@ export class DiskCredentialsStorage implements ICredentialStorage {
         const json = await this.readCredentialsMap();
         json[deviceId] = credentials;
 
+        debug("writing credentials to ", this.filePath);
+        await fs.mkdirp(dirname(this.filePath));
         await fs.writeFile(this.filePath, JSON.stringify(json));
     }
 
     private async readCredentialsMap() {
         let contents: Buffer;
         try {
+            debug("reading credentials at", this.filePath);
             contents = await fs.readFile(this.filePath);
         } catch (e) {
             return {};
