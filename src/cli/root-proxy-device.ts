@@ -53,6 +53,20 @@ export class RootProxyDevice implements IDevice {
         return process.getuid();
     }
 
+    public static removeProxiedUserId(
+        args: string[],
+    ) {
+        const argIndex = args.indexOf(PROXIED_ID_ARG);
+        const valueIndex = argIndex + 1;
+        if (argIndex >= 0) {
+            const deleteCount = valueIndex < args.length ? 2 : 1;
+            args.splice(argIndex, deleteCount);
+            return args;
+        }
+
+        return args;
+    }
+
     constructor(
         private readonly io: IInputOutput,
         private readonly cliProxy: ICliProxy,
