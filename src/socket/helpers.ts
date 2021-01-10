@@ -1,3 +1,5 @@
+import _debug from "debug";
+
 import { IDeviceSocket, IPacket } from "./model";
 import { IResultPacket } from "./packets/base";
 import { UnsupportedIncomingPacket } from "./packets/incoming/unsupported";
@@ -31,6 +33,8 @@ export class RpcError extends Error {
     }
 }
 
+const rpcDebug = _debug("playground:socket:rpc");
+
 export async function performRpc<R extends IResultPacket>(
     socket: IDeviceSocket,
     request: IPacket,
@@ -51,6 +55,7 @@ export async function performRpc<R extends IResultPacket>(
     if (result === undefined) {
         throw new Error(`Received packet has no result: ${resultPacket.constructor.name} ${JSON.stringify(resultPacket)}`);
     } else if (result !== 0) {
+        rpcDebug(`Received error result ${result} (in: `, resultPacket, `) expected type ${resultType} from request:`, request);
         throw new RpcError(result, errorCode);
     }
 

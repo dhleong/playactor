@@ -1,6 +1,7 @@
-import { Printable } from "clime";
+import { ExpectedError, Printable } from "clime";
 import _debug from "debug";
 import { resolve as realResolvePath } from "path";
+import { CredentialsError } from "../credentials";
 
 import { RootMissingError } from "../credentials/root-managing";
 import { IConnectionConfig, IDevice } from "../device/model";
@@ -112,6 +113,8 @@ export class RootProxyDevice implements IDevice {
             await this.proxyCliInvocation();
 
             stopCurrentInvocationForProxy();
+        } else if (e instanceof CredentialsError) {
+            throw new ExpectedError(e.message);
         }
 
         // nothing to resolve

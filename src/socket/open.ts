@@ -75,7 +75,6 @@ export async function openSocket(
     networkConfig: INetworkConfig = {},
     loginConfig: Partial<ILoginConfig> = {},
 ) {
-    const waker = wakerFactory.create(networkConfig);
     const mySocketConfig = {
         ...defaultSocketConfig,
         ...socketConfig,
@@ -84,6 +83,7 @@ export async function openSocket(
     for (let i = 0; i < mySocketConfig.maxRetries; ++i) {
         /* eslint-disable no-await-in-loop */
 
+        const waker = wakerFactory.create(networkConfig);
         try {
             return await attemptOpen(
                 waker,
