@@ -80,6 +80,11 @@ export class PinAcceptingDevice implements IDevice {
 
     private async registerWithPincode(config: IConnectionConfig) {
         debug("pincode required; prompting from user...");
+
+        this.io.logInfo(
+            "Go to 'Settings -> Mobile App Connection Settings -> Add Device'"
+            + " on your console to obtain the PIN code.",
+        );
         const pinCode = await this.io.prompt("Pin code> ");
 
         debug("opening connection with user-provided pin");

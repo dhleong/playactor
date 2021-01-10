@@ -32,12 +32,14 @@ export class HandshakeProc implements IDeviceProc {
 
         // prepare crypto with the "seed" in `greeting`
         const crypto = new CryptoCodec(greeting.seed);
-        socket.setCodec(crypto);
 
         // sign our "random key" with the public key
         const key = this.signWithPublicKey(crypto.seed);
 
         await socket.send(new HandshakePacket(key, greeting.seed));
+
+        // set crypto *after* responding with the handshake
+        socket.setCodec(crypto);
     }
 
     // public for testing

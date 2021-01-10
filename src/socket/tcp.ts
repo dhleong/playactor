@@ -45,10 +45,12 @@ export class TcpDeviceSocket implements IDeviceSocket {
                 timeout: config.connectTimeoutMillis,
             });
             socket.once("connect", () => {
+                debug("socket connected!");
                 socket.removeAllListeners("error");
                 resolve(new TcpDeviceSocket(device, protocol, socket));
             });
             socket.once("error", err => {
+                debug("error on socket:", err);
                 reject(err);
             });
         });
@@ -175,6 +177,7 @@ export class TcpDeviceSocket implements IDeviceSocket {
     }
 
     private handleEnd(err?: any) {
+        debug("socket closed:", err);
         this.isClosed = true;
 
         for (const receiver of this.receivers) {
