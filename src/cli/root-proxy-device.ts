@@ -94,6 +94,7 @@ export class RootProxyDevice implements IDevice {
                 throw e;
             }
 
+            this.io.logInfo(e.message);
             await this.proxyCliInvocation();
 
             stopCurrentInvocationForProxy();
@@ -122,8 +123,7 @@ export class RootProxyDevice implements IDevice {
             baseArgs[oldIndex] = this.resolvePath(this.config.providedCredentialsPath);
         }
 
-        this.io.logInfo("Attempting to request root permissions now (we will relinquish them as soon as possible)");
-        this.io.logInfo("playground needs root permissions as part of the credentials-requesting process");
+        this.io.logInfo("Attempting to request root permissions now (we will relinquish them as soon as possible)...");
 
         await this.cliProxy.invoke([
             ...baseArgs,

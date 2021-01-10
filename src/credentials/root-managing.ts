@@ -22,7 +22,7 @@ export class RootManagingCredentialRequester implements ICredentialRequester {
 
     public async requestForDevice(device: IDiscoveredDevice): Promise<ICredentials> {
         if (process.getuid && process.getuid()) {
-            throw new RootMissingError("Root permissions required to request credentials");
+            throw new RootMissingError(`No credentials for ${device.name} and unable to request (need root permissions).`);
         }
 
         const result = await this.delegate.requestForDevice(device);
