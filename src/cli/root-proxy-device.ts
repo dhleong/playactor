@@ -6,6 +6,7 @@ import { CredentialsError } from "../credentials";
 import { RootMissingError } from "../credentials/root-managing";
 import { IConnectionConfig, IDevice } from "../device/model";
 import { INetworkConfig } from "../discovery/model";
+import { ConnectionRefusedError } from "../socket/open";
 import { ICliProxy } from "./cli-proxy";
 import { IInputOutput } from "./io";
 
@@ -113,7 +114,10 @@ export class RootProxyDevice implements IDevice {
             await this.proxyCliInvocation();
 
             stopCurrentInvocationForProxy();
-        } else if (e instanceof CredentialsError) {
+        } else if (
+            e instanceof CredentialsError
+            || e instanceof ConnectionRefusedError
+        ) {
             throw new ExpectedError(e.message);
         }
 

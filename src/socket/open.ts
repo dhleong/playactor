@@ -14,6 +14,17 @@ import { TcpDeviceSocket } from "./tcp";
 
 const debug = _debug("playground:socket:open");
 
+/**
+ * If thrown when trying to authenticate, the device has probably
+ * closed the socket and, because we're not authenticated, will
+ * be unable to do so.
+ */
+export class ConnectionRefusedError extends Error {
+    constructor() {
+        super("Connection refused; if unauthenticated, try restarting the device");
+    }
+}
+
 function openConnection(
     device: IDiscoveredDevice,
     config: ISocketConfig,
@@ -39,6 +50,7 @@ async function attemptOpen(
 ) {
     // send some packets to make sure the device is willing to accept our
     // TCP connection
+    debug("requesting device wake up to ensure socket availability");
     const credsRecord = credentials as unknown as Record<string, unknown>;
     await waker.sendTo(device, formatDiscoveryMessage({
         data: credsRecord,
@@ -80,6 +92,7 @@ export async function openSocket(
         ...socketConfig,
     };
 
+    let wasRefused = false;
     for (let i = 0; i < mySocketConfig.maxRetries; ++i) {
         /* eslint-disable no-await-in-loop */
 
@@ -93,11 +106,16 @@ export async function openSocket(
                 loginConfig,
             );
         } catch (e) {
+            wasRefused = wasRefused || e.code === "ECONNREFUSED";
+
             if (isRetryable(e) && i + 1 !== mySocketConfig.maxRetries) {
                 const backoff = mySocketConfig.retryBackoffMillis * (i + 1);
                 debug("encountered retryable error:", e);
                 debug("retrying after", backoff);
-                delayMillis(backoff);
+                await delayMillis(backoff);
+            } else if (wasRefused) {
+                debug("can no longer retry (was refused): ", e);
+                throw new ConnectionRefusedError();
             } else {
                 debug("cannot retry:", e);
                 throw e;
