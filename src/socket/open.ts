@@ -67,8 +67,10 @@ async function attemptOpen(
     await delayMillis(250);
     waker.close();
 
+    debug("attempting to open socket...");
     const socket = await openConnection(device, config);
 
+    debug("performing handshake and login...");
     await socket.execute(new HandshakeProc());
     await socket.execute(new LoginProc(credentials, loginConfig));
 

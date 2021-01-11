@@ -1,3 +1,4 @@
+import _debug from "debug";
 import dgram from "dgram";
 
 import { DeviceType, IDiscoveredDevice, INetworkConfig } from "../discovery/model";
@@ -7,6 +8,8 @@ export const wakePortsByType = {
     [DeviceType.PS4]: 987,
     [DeviceType.PS5]: 9302,
 };
+
+const debug = _debug("playground:waker:udp");
 
 export class UdpWakerNetwork implements IWakerNetwork {
     private socket?: dgram.Socket;
@@ -27,8 +30,10 @@ export class UdpWakerNetwork implements IWakerNetwork {
         }
 
         return new Promise<void>((resolve, reject) => {
-            const { port, address } = device.address;
-            socket.send(message, port, address, err => {
+            const { address } = device.address;
+            debug("sending ", message, "to:", address, wakePort);
+
+            socket.send(message, wakePort, address, err => {
                 if (err) reject(err);
                 else resolve();
             });
