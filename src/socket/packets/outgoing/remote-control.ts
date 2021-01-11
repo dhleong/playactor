@@ -4,7 +4,7 @@ import { PacketBuilder } from "../builder";
 import { PacketType } from "../types";
 
 export class RemoteControlPacket extends OutgoingPacket {
-    public readonly type = PacketType.Status;
+    public readonly type = PacketType.RemoteControl;
     public readonly totalLength = 16;
 
     constructor(

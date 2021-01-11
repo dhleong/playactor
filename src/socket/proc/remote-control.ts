@@ -43,13 +43,17 @@ export class RemoteControlProc implements IDeviceProc {
             await delayMillis(delay);
         }
 
+        debug("open RC");
         await sendKey(socket, InternalRemoteOperation.OpenRC);
         await delayMillis(MIN_SENDKEY_DELAY);
 
         await this.sendKeys(socket);
 
+        debug("close RC");
         await sendKey(socket, InternalRemoteOperation.CloseRC);
         await delayMillis(MIN_SENDKEY_DELAY);
+
+        debug("done!");
     }
 
     private async sendKeys(socket: IDeviceSocket) {

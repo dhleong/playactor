@@ -19,5 +19,7 @@ export enum PacketType {
     Standby = 0x1A,
     StandbyResult = 0x1B,
 
+    RemoteControl = 0x1C,
+
     Handshake = 0x20,
 }
