@@ -249,7 +249,7 @@ export class DeviceOptions extends DiscoveryOptions {
             socket: this.socketConfig,
 
             login: {
-                passCode: this.passCode?.value,
+                passCode: this.passCode?.value ?? "",
             },
         };
     }
