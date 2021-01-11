@@ -5,31 +5,10 @@ import * as FakeTimers from "@sinonjs/fake-timers";
 
 import { toArray } from "ix/asynciterable";
 import { Discovery } from "../src/discovery";
-import { IDiscoveredDevice, IDiscoveryNetwork } from "../src/discovery/model";
+import { MockDiscoveryNetworkFactory } from "./discovery/util";
 
 chai.use(sinonChai);
 chai.should();
-
-class MockNetwork implements IDiscoveryNetwork {
-    /* eslint-disable @typescript-eslint/no-unused-vars */
-    public async send(
-        recipientAddress: string,
-        recipientPort: number,
-        type: string,
-        data?: Record<string, unknown>,
-    ): Promise<void> {
-        throw new Error("Method not implemented.");
-    }
-    /* eslint-enable @typescript-eslint/no-unused-vars */
-
-    public close() {
-        // nop
-    }
-
-    public async ping(): Promise<void> {
-        // nop
-    }
-}
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ignore(v: any) {
@@ -39,32 +18,16 @@ function ignore(v: any) {
 describe("Discovery", () => {
     let clock: FakeTimers.InstalledClock;
     let discovery: Discovery;
-    let lastNetwork: IDiscoveryNetwork;
-    let pendingDevices: IDiscoveredDevice[];
+    let netFactory: MockDiscoveryNetworkFactory;
 
     beforeEach(() => {
         clock = FakeTimers.install();
-        lastNetwork = new MockNetwork();
-        pendingDevices = [];
 
+        netFactory = new MockDiscoveryNetworkFactory();
         discovery = new Discovery({
             pingIntervalMillis: 5000,
             timeoutMillis: 30000,
-        }, {
-            createDevices(config, onDevice) {
-                const oldPing = lastNetwork.ping;
-                lastNetwork.ping = async () => {
-                    for (const d of pendingDevices) {
-                        onDevice(d);
-                    }
-                    oldPing();
-                };
-                return lastNetwork;
-            },
-            createMessages() {
-                return lastNetwork;
-            },
-        });
+        }, netFactory);
     });
 
     afterEach(() => {
@@ -88,7 +51,7 @@ describe("Discovery", () => {
 
         it("sends pings at appropriate intervals", async () => {
             const ping = fake();
-            lastNetwork.ping = ping;
+            netFactory.network.ping = ping;
 
             const promise = toArray(discovery.discover());
             promise.then(() => {}); // ensure it starts running
@@ -106,7 +69,7 @@ describe("Discovery", () => {
         });
 
         it("dedups devices by ID", async () => {
-            pendingDevices = [
+            netFactory.pendingDevices = [
                 { id: "serenity" } as any,
                 { id: "magellan" } as any,
                 { id: "serenity" } as any,

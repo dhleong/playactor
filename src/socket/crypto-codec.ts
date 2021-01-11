@@ -12,7 +12,6 @@ const debug = _debug("playground:socket:crypto");
 
 export class CryptoCodec implements IPacketCodec {
     private readonly cipher: crypto.Cipher;
-    // private readonly decipher: crypto.Decipher;
 
     constructor(
         private readonly initVector: Buffer,
