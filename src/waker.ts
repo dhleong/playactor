@@ -72,7 +72,7 @@ export class Waker {
         );
 
         debug("waiting for ", device, "to become awake");
-        for await (const d of discovery.discover(config)) {
+        for await (const d of discovery.discover(config, { uniqueDevices: false })) {
             if (d.id === device.id && d.status === DeviceStatus.AWAKE) {
                 debug("received AWAKE status:", d);
                 return;

@@ -3,11 +3,13 @@ import { DiscoveryVersion } from "../protocol";
 export interface IDiscoveryConfig {
     pingIntervalMillis: number;
     timeoutMillis: number;
+    uniqueDevices: boolean;
 }
 
 export const defaultDiscoveryConfig: IDiscoveryConfig = {
     pingIntervalMillis: 5_000,
     timeoutMillis: 30_000,
+    uniqueDevices: true,
 };
 
 export interface INetworkConfig {

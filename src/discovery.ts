@@ -37,7 +37,7 @@ export class Discovery {
 
         const sink = new CancellableAsyncSink<IDiscoveredDevice>();
         const network = this.networkFactory.createDevices(networkConfig, device => {
-            if (!discoveredIds.has(device.id)) {
+            if (!(fullConfig.uniqueDevices && discoveredIds.has(device.id))) {
                 discoveredIds.add(device.id);
                 sink.write(device);
             }
