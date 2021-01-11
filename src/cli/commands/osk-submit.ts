@@ -14,6 +14,7 @@ export default class extends Command {
         @param({
             description: "Text with which to replace any existing input",
             name: "text",
+            type: String,
         })
         text: string | undefined = undefined,
         deviceSpec: DeviceOptions,
