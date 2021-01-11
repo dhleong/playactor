@@ -45,7 +45,19 @@ export class LoginPacket extends OutgoingPacket {
     //      INFO_KIND_GAMECOMPANION = 1;
     //      INFO_KIND_SYSTEMCOMPANION = 0;
     //      INFO_SDK_VERSION = 4;
-    public readonly info = 0x0201;
+    //
+    // Here are some guesses:
+    //      0xF000 = device type?
+    //      0x0F00 = sdk version?
+    //      0x0010 = account id hashed/raw
+    //      0x0001 = KIND flag?
+    //
+    // Note that the 0F00 position used to be 2 (and using that value is
+    // still accepted, as is using 3) so it seems reasonable to expect
+    // that to be the sdk version. 4 bits seems a rather small number to
+    // encode the SDK version, however, so device type could be further
+    // back—we do have 32 bits here...
+    public readonly info = 0x0401;
 
     constructor(
         private readonly userCredential: string,
