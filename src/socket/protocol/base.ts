@@ -1,16 +1,17 @@
 import _debug from "debug";
 
-import { IPacketCodec, PacketReadState } from "../model";
+import { PacketReadState } from "../model";
 
 const minPacketLength = 4;
 
-const debug = _debug("playground:packets:length");
+const debug = _debug("playground:socket:length");
 
 export class LengthDelimitedBufferReader {
     private currentBuffer?: Buffer;
+    private actualLength?: number;
     private expectedLength?: number;
 
-    public read(codec: IPacketCodec, data: Buffer): PacketReadState {
+    public read(data: Buffer, paddingSize?: number): PacketReadState {
         if (this.currentBuffer) {
             this.currentBuffer = Buffer.concat([this.currentBuffer, data]);
         } else {
@@ -22,16 +23,19 @@ export class LengthDelimitedBufferReader {
         }
 
         if (this.expectedLength === undefined) {
-            const available = codec.decode(this.currentBuffer);
-            if (available.length < minPacketLength) {
-                debug("decoded", this.currentBuffer, "into:", available);
-                return PacketReadState.PENDING;
-            }
-
-            this.expectedLength = available.readInt32LE(0);
+            this.actualLength = this.currentBuffer.readInt32LE(0);
+            this.expectedLength = paddingSize
+                ? Math.ceil(this.actualLength / paddingSize) * paddingSize
+                : this.actualLength;
+            debug(
+                "determined next packet length: ",
+                this.expectedLength,
+                `(actual: ${this.actualLength}; padding: ${paddingSize})`,
+            );
         }
 
         if (this.currentBuffer.length >= this.expectedLength) {
+            debug("have", this.currentBuffer.length, "of expected", this.expectedLength);
             return PacketReadState.DONE;
         }
 
@@ -41,7 +45,7 @@ export class LengthDelimitedBufferReader {
     public get(): Buffer {
         const buffer = this.currentBuffer;
         if (!buffer) throw new Error("Invalid state: no buffer read");
-        return buffer.slice(0, this.expectedLength);
+        return buffer.slice(0, this.actualLength);
     }
 
     public remainder(): Buffer | undefined {
@@ -49,11 +53,7 @@ export class LengthDelimitedBufferReader {
         if (!data) throw new Error("Illegal state: no buffer read");
 
         const expected = this.expectedLength;
-        if (expected === undefined) {
-            throw new Error("Illegal state: no expected length");
-        }
-
-        if (expected < data.byteLength) {
+        if (expected && expected < data.byteLength) {
             return data.slice(expected);
         }
     }

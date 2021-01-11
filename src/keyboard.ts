@@ -1,9 +1,13 @@
+import _debug from "debug";
+
 import { IDeviceSocket } from "./socket/model";
 import {
     OskActionType, OskCommand, OskFlags, OskInputType,
 } from "./socket/osk";
 import { OskChangeStringPacket } from "./socket/packets/outgoing/osk-change-string";
 import { OskControlPacket } from "./socket/packets/outgoing/osk-control";
+
+const debug = _debug("playground:keyboard");
 
 /**
  * Represents an active on-screen keyboard control session
@@ -51,6 +55,7 @@ export class OnScreenKeyboard {
     ) {
         this.ensureValid();
 
+        debug("setting text:", text);
         await this.socket.send(new OskChangeStringPacket(
             text,
             { caretIndex },
@@ -68,6 +73,7 @@ export class OnScreenKeyboard {
         this.isValid = false;
 
         // give the device some time to process before we disconnect
+        debug("keep socket alive after submitting");
         this.socket.requestKeepAlive(450);
     }
 

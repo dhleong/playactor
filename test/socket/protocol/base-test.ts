@@ -1,6 +1,6 @@
 import * as chai from "chai";
 import { expect } from "chai";
-import { PacketReadState, PlaintextCodec } from "../../../src/socket/model";
+import { PacketReadState } from "../../../src/socket/model";
 
 import { PacketBuilder } from "../../../src/socket/packets/builder";
 import { LengthDelimitedBufferReader } from "../../../src/socket/protocol/base";
@@ -15,7 +15,6 @@ describe("LengthDelimitedBufferReader", () => {
 
     it("handles a complete packet correctly", () => {
         reader.read(
-            PlaintextCodec,
             new PacketBuilder(8)
                 .writeInt(42)
                 .build(),
@@ -23,11 +22,22 @@ describe("LengthDelimitedBufferReader", () => {
         expect(reader.remainder()).to.be.undefined;
     });
 
+    it("strips excess padding", () => {
+        const padded = Buffer.alloc(16);
+        padded.writeInt32LE(8);
+        reader.read(
+            padded,
+            16,
+        ).should.equal(PacketReadState.DONE);
+        expect(reader.get()).to.have.lengthOf(8);
+        expect(reader.remainder()).to.be.undefined;
+    });
+
     it("waits for the complete packet", () => {
         const header = Buffer.alloc(4);
         header.writeInt32LE(8);
-        reader.read(PlaintextCodec, header).should.equal(PacketReadState.PENDING);
-        reader.read(PlaintextCodec, header).should.equal(PacketReadState.DONE);
+        reader.read(header).should.equal(PacketReadState.PENDING);
+        reader.read(header).should.equal(PacketReadState.DONE);
 
         reader.get().should.deep.equal(
             new PacketBuilder(8)
@@ -39,7 +49,6 @@ describe("LengthDelimitedBufferReader", () => {
 
     it("returns overflow in remainder", () => {
         reader.read(
-            PlaintextCodec,
             Buffer.concat([
                 new PacketBuilder(8)
                     .writeInt(42)

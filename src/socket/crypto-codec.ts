@@ -11,7 +11,12 @@ const randomSeed = Buffer.alloc(16, 0);
 const debug = _debug("playground:socket:crypto");
 
 export class CryptoCodec implements IPacketCodec {
+    public readonly paddingSize = 16;
+
     private readonly cipher: crypto.Cipher;
+    private readonly decipher: crypto.Decipher;
+
+    private pending?: Buffer;
 
     constructor(
         private readonly initVector: Buffer,
@@ -23,6 +28,12 @@ export class CryptoCodec implements IPacketCodec {
             seed,
             initVector,
         );
+        this.decipher = crypto.createDecipheriv(
+            this.algorithm,
+            this.seed,
+            this.initVector,
+        );
+        this.decipher.setAutoPadding(false);
     }
 
     public encode(packet: Buffer): Buffer {
@@ -37,25 +48,28 @@ export class CryptoCodec implements IPacketCodec {
     }
 
     public decode(packet: Buffer): Buffer {
-        // seems safest if we create a new decipher for each
-        // packet, instead of trying to reuse...
-        const decipher = crypto.createDecipheriv(
-            this.algorithm,
-            this.seed,
-            this.initVector,
-        );
-        decipher.setAutoPadding(false);
-        debug("decoding:", packet);
+        const { pending } = this;
+        const p = pending ? Buffer.concat([pending, packet]) : packet;
+        this.pending = undefined;
 
-        const p1 = decipher.update(packet);
-        debug(" ... decoded[1]: ", p1);
+        // decipher in 16-byte chunks
+        if (p.length < 16) {
+            debug("wait for 16-byte chunk");
+            this.pending = p;
+            return Buffer.from([]);
+        }
 
-        const p2 = decipher.final();
-        debug(" ... decoded[x]: ", p2);
+        const availableBytes = Math.floor(p.length / 16) * 16;
+        if (availableBytes === 0) {
+            return Buffer.from([]);
+        }
 
-        return Buffer.concat([
-            p1,
-            p2,
-        ]);
+        const decodable = p.slice(0, availableBytes);
+        this.pending = availableBytes < p.length
+            ? p.slice(availableBytes)
+            : undefined;
+
+        debug("decoding", availableBytes, " of ", p.length, "total buffered");
+        return this.decipher.update(decodable);
     }
 }

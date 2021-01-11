@@ -18,6 +18,7 @@ export interface IPacket {
 }
 
 export interface IPacketCodec {
+    paddingSize?: number;
     encode(packet: Buffer): Buffer;
     decode(packet: Buffer): Buffer;
 }
@@ -41,8 +42,8 @@ export enum PacketReadState {
  * overflow can be retrieved from `remainder()`
  */
 export interface IPacketReader {
-    read(codec: IPacketCodec, data: Buffer): PacketReadState;
-    get(codec: IPacketCodec): IPacket;
+    read(data: Buffer, paddingSize?: number): PacketReadState;
+    get(): IPacket;
     remainder(): Buffer | undefined;
 }
 
