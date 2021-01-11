@@ -60,7 +60,10 @@ export class PacketReaderV1 implements IPacketReader {
 }
 
 export const DeviceProtocolV1: IDeviceProtocol = {
-    version: 0x02000100, // seems to be [minor,major] as shorts
+    version: {
+        major: 2,
+        minor: 0,
+    },
 
     createPacketReader(): IPacketReader {
         return new PacketReaderV1();

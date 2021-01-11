@@ -16,7 +16,6 @@ export class LoginProc implements IDeviceProc {
         await performRpc<LoginResultPacket>(
             socket,
             new LoginPacket(
-                socket.protocolVersion,
                 this.credentials["user-credential"],
                 this.config,
             ),

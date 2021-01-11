@@ -46,8 +46,14 @@ export interface IPacketReader {
     remainder(): Buffer | undefined;
 }
 
+export interface IProtocolVersion {
+    major: number;
+    minor: number;
+}
+
 export interface IDeviceProtocol {
-    version: number;
+    version: IProtocolVersion;
+
     createPacketReader(): IPacketReader;
     onPacketReceived?(
         socket: IDeviceSocket,
@@ -60,7 +66,8 @@ export interface IDeviceProtocol {
  * Represents a persistent, low-level connection to a device
  */
 export interface IDeviceSocket {
-    protocolVersion: number;
+    protocolVersion: IProtocolVersion;
+
     isConnected: boolean;
     openedTimestamp: number;
 

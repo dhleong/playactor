@@ -1,4 +1,5 @@
 const intLength = 4;
+const shortLength = 2;
 
 export class PacketBuilder {
     private buffer: Buffer;
@@ -38,6 +39,12 @@ export class PacketBuilder {
             this.offset += padding;
         }
 
+        return this;
+    }
+
+    public writeShort(value: number) {
+        this.buffer.writeInt16LE(value, this.offset);
+        this.offset += shortLength;
         return this;
     }
 
