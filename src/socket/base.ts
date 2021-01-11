@@ -23,7 +23,7 @@ export class BufferPacketProcessor {
         const reader = this.reader ?? (
             this.reader = this.protocol.createPacketReader()
         );
-        const result = reader.read(data);
+        const result = reader.read(this.codec, data);
 
         switch (result) {
             case PacketReadState.PENDING:

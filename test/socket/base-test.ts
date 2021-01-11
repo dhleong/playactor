@@ -19,8 +19,8 @@ chai.should();
 class FakePacketReader implements IPacketReader {
     private readonly lengthDelimiter = new LengthDelimitedBufferReader();
 
-    public read(data: Buffer): PacketReadState {
-        return this.lengthDelimiter.read(data);
+    public read(codec: IPacketCodec, data: Buffer): PacketReadState {
+        return this.lengthDelimiter.read(codec, data);
     }
 
     public get(codec: IPacketCodec): IPacket {

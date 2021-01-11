@@ -1,11 +1,16 @@
-import { PacketReadState } from "../model";
+import _debug from "debug";
+
+import { IPacketCodec, PacketReadState } from "../model";
 
 const minPacketLength = 4;
 
+const debug = _debug("playground:packets:length");
+
 export class LengthDelimitedBufferReader {
     private currentBuffer?: Buffer;
+    private expectedLength?: number;
 
-    public read(data: Buffer): PacketReadState {
+    public read(codec: IPacketCodec, data: Buffer): PacketReadState {
         if (this.currentBuffer) {
             this.currentBuffer = Buffer.concat([this.currentBuffer, data]);
         } else {
@@ -14,6 +19,16 @@ export class LengthDelimitedBufferReader {
 
         if (this.currentBuffer.length < minPacketLength) {
             return PacketReadState.PENDING;
+        }
+
+        if (this.expectedLength === undefined) {
+            const available = codec.decode(this.currentBuffer);
+            if (available.length < minPacketLength) {
+                debug("decoded", this.currentBuffer, "into:", available);
+                return PacketReadState.PENDING;
+            }
+
+            this.expectedLength = available.readInt32LE(0);
         }
 
         if (this.currentBuffer.length >= this.expectedLength) {
@@ -34,15 +49,12 @@ export class LengthDelimitedBufferReader {
         if (!data) throw new Error("Illegal state: no buffer read");
 
         const expected = this.expectedLength;
+        if (expected === undefined) {
+            throw new Error("Illegal state: no expected length");
+        }
+
         if (expected < data.byteLength) {
             return data.slice(expected);
         }
-    }
-
-    private get expectedLength() {
-        const buffer = this.currentBuffer;
-        if (!buffer) throw new Error("Unable to derive length without a buffer");
-
-        return buffer.readInt32LE(0);
     }
 }

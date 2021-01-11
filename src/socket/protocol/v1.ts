@@ -37,8 +37,8 @@ const debug = _debug("playground:packets:v1");
 export class PacketReaderV1 implements IPacketReader {
     private readonly lengthDelimiter = new LengthDelimitedBufferReader();
 
-    public read(data: Buffer): PacketReadState {
-        return this.lengthDelimiter.read(data);
+    public read(codec: IPacketCodec, data: Buffer): PacketReadState {
+        return this.lengthDelimiter.read(codec, data);
     }
 
     public get(codec: IPacketCodec): IPacket {

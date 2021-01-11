@@ -41,7 +41,7 @@ export enum PacketReadState {
  * overflow can be retrieved from `remainder()`
  */
 export interface IPacketReader {
-    read(data: Buffer): PacketReadState;
+    read(codec: IPacketCodec, data: Buffer): PacketReadState;
     get(codec: IPacketCodec): IPacket;
     remainder(): Buffer | undefined;
 }
