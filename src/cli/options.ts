@@ -105,14 +105,14 @@ export class DiscoveryOptions extends InputOutputOptions {
 
     @option({
         name: "bind-address",
-        description: "Bind to a specific network adapter IP, if you have multiple",
+        description: "Bind to a specific network adapter IP",
         placeholder: "ip",
     })
     public localBindAddress?: string;
 
     @option({
         name: "bind-port",
-        description: "Bind on a specific port, if you need specific routing",
+        description: "Bind on a specific port",
         placeholder: "port",
     })
     public localBindPort?: number;
