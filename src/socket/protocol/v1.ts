@@ -25,6 +25,7 @@ interface PacketConstructor {
 }
 const packets: {[key: number]: PacketConstructor} = {
     [PacketType.Hello]: ServerHelloPacket,
+    [PacketType.BootResult]: IncomingResultPacket,
     [PacketType.LoginResult]: LoginResultPacket,
     [PacketType.OskStartResult]: OskStartResultPacket,
     [PacketType.StandbyResult]: StandbyResultPacket,
