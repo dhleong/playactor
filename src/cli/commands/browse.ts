@@ -15,6 +15,8 @@ export default class extends Command {
     public async execute(
         options: DiscoveryOptions,
     ) {
+        options.configureLogging();
+
         const discovery = new Discovery(
             options.discoveryConfig,
         );

@@ -1,3 +1,5 @@
+import _debug from "debug";
+
 import { DeviceStatus, DiscoveryMessageType } from "./model";
 
 interface IParsedMessage {
@@ -7,8 +9,13 @@ interface IParsedMessage {
 
 const STATUS_CODE_STANDBY = "620";
 
+const debug = _debug("playground:discovery:messages");
+
 export function parseMessage(raw: Buffer): IParsedMessage {
-    const lines = raw.toString().split("\n");
+    const rawString = raw.toString();
+    debug("parse:", rawString);
+
+    const lines = rawString.split("\n");
     if (!lines.length) {
         throw new Error(`Invalid message: no lines: ${raw.toString()}`);
     }
