@@ -5,7 +5,6 @@ import { BufferPacketProcessor } from "../../src/socket/base";
 import {
     IDeviceProtocol,
     IPacket,
-    IPacketCodec,
     IPacketReader,
     PacketReadState,
     PlaintextCodec,
@@ -19,13 +18,12 @@ chai.should();
 class FakePacketReader implements IPacketReader {
     private readonly lengthDelimiter = new LengthDelimitedBufferReader();
 
-    public read(codec: IPacketCodec, data: Buffer): PacketReadState {
-        return this.lengthDelimiter.read(codec, data);
+    public read(data: Buffer): PacketReadState {
+        return this.lengthDelimiter.read(data);
     }
 
-    public get(codec: IPacketCodec): IPacket {
-        const original = this.lengthDelimiter.get();
-        const buffer = codec.decode(original);
+    public get(): IPacket {
+        const buffer = this.lengthDelimiter.get();
         return {
             type: buffer.readInt32LE(4),
             toBuffer() { return buffer; },

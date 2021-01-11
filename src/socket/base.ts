@@ -12,10 +12,11 @@ const debug = _debug("playground:socket:BufferPacketProcessor");
 
 export class BufferPacketProcessor {
     private reader?: IPacketReader;
+    private paddingSize?: number;
 
     constructor(
         private readonly protocol: IDeviceProtocol,
-        public codec: IPacketCodec,
+        private codec: IPacketCodec,
         private readonly onNewPacket: (packet: IPacket) => void,
     ) {}
 
@@ -23,7 +24,9 @@ export class BufferPacketProcessor {
         const reader = this.reader ?? (
             this.reader = this.protocol.createPacketReader()
         );
-        const result = reader.read(this.codec, data);
+        const decoded = this.codec.decode(data);
+        debug(" ... decoded: ", decoded);
+        const result = reader.read(decoded, this.paddingSize);
 
         switch (result) {
             case PacketReadState.PENDING:
@@ -36,10 +39,16 @@ export class BufferPacketProcessor {
         }
     }
 
+    public setCodec(codec: IPacketCodec) {
+        this.codec = codec;
+        this.paddingSize = codec.paddingSize;
+    }
+
     private dispatchNewPacket(reader: IPacketReader) {
-        const packet = reader.get(this.codec);
+        const packet = reader.get();
         const remainder = reader.remainder();
 
+        debug("dispatch:", packet);
         this.onNewPacket(packet);
 
         if (remainder) {

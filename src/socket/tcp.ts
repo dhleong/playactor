@@ -136,7 +136,7 @@ export class TcpDeviceSocket implements IDeviceSocket {
     public setCodec(codec: IPacketCodec) {
         debug("switch to codec:", codec);
         this.codec = codec;
-        this.processor.codec = codec;
+        this.processor.setCodec(codec);
     }
 
     public async close() {

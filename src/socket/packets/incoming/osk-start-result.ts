@@ -25,19 +25,8 @@ export class OskStartResultPacket extends IncomingResultPacket {
         super(data);
 
         this.oskType = data.readInt32LE(12);
-
-        let lengthPosition = 16;
-        let stringPosition = 20;
-        if (data.length > 36) {
-            // TODO: for some reason, the way we decode it gives an extra
-            // 16 bytes of garbage here. We should really figure out why
-            // that's happening ... and fix it
-            lengthPosition += 16;
-            stringPosition += 16;
-        }
-
-        this.maxLength = data.readInt32LE(lengthPosition);
-        this.initialContent = data.toString("UTF-16LE", stringPosition);
+        this.maxLength = data.readInt32LE(16);
+        this.initialContent = data.toString("UTF-16LE", 20);
     }
 
     public get actionType() {

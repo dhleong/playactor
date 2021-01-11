@@ -4,7 +4,6 @@ import {
     IDeviceProtocol,
     IDeviceSocket,
     IPacket,
-    IPacketCodec,
     IPacketReader,
     PacketReadState,
 } from "../model";
@@ -37,13 +36,12 @@ const debug = _debug("playground:packets:v1");
 export class PacketReaderV1 implements IPacketReader {
     private readonly lengthDelimiter = new LengthDelimitedBufferReader();
 
-    public read(codec: IPacketCodec, data: Buffer): PacketReadState {
-        return this.lengthDelimiter.read(codec, data);
+    public read(data: Buffer, paddingSize?: number): PacketReadState {
+        return this.lengthDelimiter.read(data, paddingSize);
     }
 
-    public get(codec: IPacketCodec): IPacket {
-        const original = this.lengthDelimiter.get();
-        const buf = codec.decode(original);
+    public get(): IPacket {
+        const buf = this.lengthDelimiter.get();
         const type = buf.readInt32LE(PACKET_TYPE_OFFSET);
         const Constructor = packets[type];
         if (!Constructor) {

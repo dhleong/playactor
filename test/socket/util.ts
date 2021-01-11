@@ -11,7 +11,6 @@ import {
     IDeviceSocket,
     IPacket,
     IPacketCodec,
-    PlaintextCodec,
 } from "../../src/socket/model";
 import { DeviceProtocolV1 } from "../../src/socket/protocol/v1";
 
@@ -46,8 +45,8 @@ export class FakeSocket implements IDeviceSocket {
 
             try {
                 // try a more realistic parsing
-                reader.read(PlaintextCodec, packet.toBuffer());
-                yield reader.get(PlaintextCodec);
+                reader.read(packet.toBuffer());
+                yield reader.get();
             } catch (e) {
                 // packet doesn't support toBuffer...
                 yield packet;
