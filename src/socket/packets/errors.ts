@@ -1,4 +1,4 @@
-export const baseResultsToErrorCodes = {
+export const resultsToErrorCodes: {[result: number]: string} = {
     0: "OK",
     1: "BUSY",
     2: "CLIENT_MUST_UPDATE",
@@ -32,3 +32,8 @@ export const baseResultsToErrorCodes = {
     31: "ANOTHER_GAME_IS_ACTIVE",
     32: "OFFAIR",
 };
+
+export function resultToErrorCode(result: number) {
+    if (result === 0) return;
+    return resultsToErrorCodes[result] ?? "UNKNOWN_ERROR";
+}

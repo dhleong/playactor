@@ -1,6 +1,6 @@
 import { IPacket } from "../model";
 import { PacketBuilder } from "./builder";
-import { baseResultsToErrorCodes } from "./errors";
+import { resultsToErrorCodes } from "./errors";
 
 export abstract class IncomingPacket implements IPacket {
     abstract type: number;
@@ -39,14 +39,14 @@ export class IncomingResultPacket
 
     constructor(
         private readonly data: Buffer,
-        resultToErrorCode: {[result: number]: string} = baseResultsToErrorCodes,
+        toErrorCode: {[result: number]: string} = resultsToErrorCodes,
     ) {
         super();
 
         this.type = data.readInt32LE(4);
         this.result = data.readInt32LE(8);
         if (this.result !== 0) {
-            this.errorCode = resultToErrorCode[this.result] ?? "UNKNOWN";
+            this.errorCode = toErrorCode[this.result] ?? "UNKNOWN_ERROR";
         }
     }
 
