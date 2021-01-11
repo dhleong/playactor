@@ -16,7 +16,6 @@ import {
 import { DeviceProtocolV1 } from "../../src/socket/protocol/v1";
 
 export class FakeSocket implements IDeviceSocket {
-    public readonly protocolVersion = 0x42;
     public openedTimestamp: number = Date.now();
     public keepAliveUntil = 0;
 
@@ -28,6 +27,10 @@ export class FakeSocket implements IDeviceSocket {
     constructor(
         private readonly protocol: IDeviceProtocol = DeviceProtocolV1,
     ) {}
+
+    public get protocolVersion() {
+        return this.protocol.version;
+    }
 
     public get isConnected() {
         return !this.isClosed;

@@ -38,7 +38,7 @@ class FakePacketReader implements IPacketReader {
 }
 
 const FakeProtocol: IDeviceProtocol = {
-    version: 0,
+    version: { major: 0, minor: 0 },
     createPacketReader() {
         return new FakePacketReader();
     },
