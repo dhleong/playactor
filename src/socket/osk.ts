@@ -1,6 +1,6 @@
 export enum OskCommand {
-    Close = 0,
-    Submit = 1,
+    Close = 1,
+    Submit = 0,
 }
 
 export enum OskActionType {
