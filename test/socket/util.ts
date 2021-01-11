@@ -43,7 +43,7 @@ export class FakeSocket implements IDeviceSocket {
 
             try {
                 // try a more realistic parsing
-                reader.read(packet.toBuffer());
+                reader.read(PlaintextCodec, packet.toBuffer());
                 yield reader.get(PlaintextCodec);
             } catch (e) {
                 // packet doesn't support toBuffer...

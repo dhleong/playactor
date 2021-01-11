@@ -16,6 +16,7 @@ describe("PacketReaderV1", () => {
 
     it("gracefully handles unsupported packets", () => {
         reader.read(
+            PlaintextCodec,
             new PacketBuilder(8)
                 .writeInt(-9001)
                 .build(),
