@@ -36,6 +36,19 @@ export type DiscoveryKey =
     | "system-version"
     | "device-discovery-protocol-version";
 
+const discoveryKeys = new Set([
+    "host-id",
+    "host-type",
+    "host-request-port",
+    "host-name",
+    "system-version",
+    "device-discovery-protocol-version",
+]);
+
+export function isDiscoveryKey(s: string): s is DiscoveryKey {
+    return discoveryKeys.has(s);
+}
+
 export enum DiscoveryMessageType {
     SRCH = "SRCH",
     WAKEUP = "WAKEUP",
@@ -57,6 +70,8 @@ export enum DeviceType {
 export interface IDiscoveredDevice {
     address: IDeviceAddress;
     hostRequestPort: number;
+
+    extras: Record<string, string>;
 
     discoveryVersion: DiscoveryVersion;
     systemVersion: string;

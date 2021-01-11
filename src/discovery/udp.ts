@@ -7,9 +7,11 @@ import { parseMessage } from "./messages";
 import {
     DeviceStatus,
     DeviceType,
+    IDiscoveryMessage,
     IDiscoveryNetwork,
     IDiscoveryNetworkFactory,
     INetworkConfig,
+    isDiscoveryKey,
     OnDeviceDiscoveredHandler,
     OnDiscoveryMessageHandler,
 } from "./model";
@@ -101,6 +103,20 @@ export class UdpDiscoveryNetwork implements IDiscoveryNetwork {
     }
 }
 
+function extractDeviceExtras(message: IDiscoveryMessage) {
+    const extras: {[key: string]: string} = {};
+    for (const key of Object.keys(message.data)) {
+        if (!(key === "type" || isDiscoveryKey(key))) {
+            const value = message.data[key];
+            if (value !== undefined) {
+                extras[key] = value;
+            }
+        }
+    }
+
+    return extras;
+}
+
 const singletonUdpSocketManager = new UdpSocketManager();
 
 export class UdpDiscoveryNetworkFactory implements IDiscoveryNetworkFactory {
@@ -155,9 +171,11 @@ export class UdpDiscoveryNetworkFactory implements IDiscoveryNetworkFactory {
     ) {
         return this.createMessages(config, message => {
             if (message.type === "DEVICE") {
+                debug("received device:", message);
                 onDevice({
                     address: message.sender,
                     hostRequestPort: parseInt(message.data["host-request-port"], 10),
+                    extras: extractDeviceExtras(message),
 
                     discoveryVersion: message.version,
                     systemVersion: message.data["system-version"],

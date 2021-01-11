@@ -1,5 +1,8 @@
 import { DeviceConnection } from "../connection";
-import { IDiscoveredDevice } from "../discovery/model";
+import { Discovery } from "../discovery";
+import {
+    IDiscoveredDevice, IDiscoveryConfig, IDiscoveryNetworkFactory, INetworkConfig,
+} from "../discovery/model";
 import { openSocket } from "../socket/open";
 import { IWakerFactory } from "../waker";
 
@@ -9,6 +12,9 @@ export class ResolvedDevice implements IResolvedDevice {
     constructor(
         private readonly wakerFactory: IWakerFactory,
         private readonly description: IDiscoveredDevice,
+        private readonly networkConfig: INetworkConfig,
+        private readonly discoveryConfig: Partial<IDiscoveryConfig>,
+        private readonly discoveryFactory: IDiscoveryNetworkFactory,
     ) {}
 
     public async discover() {
@@ -19,7 +25,27 @@ export class ResolvedDevice implements IResolvedDevice {
         await this.startWaker();
     }
 
-    public async openConnection(config: IConnectionConfig = {}) {
+    /**
+     * discover() returns the original IDiscoveredDevice, but if
+     * you need to get an updated description for any reason, this
+     * method will do the job.
+     */
+    public async resolve(config?: INetworkConfig) {
+        const discovery = new Discovery(
+            this.discoveryConfig,
+            this.discoveryFactory,
+        );
+        for await (const device of discovery.discover(config ?? this.networkConfig)) {
+            if (device.id === this.description.id) {
+                return device;
+            }
+        }
+        throw new Error(`Could not resolve ${this.description.name}`);
+    }
+
+    public async openConnection(
+        config: IConnectionConfig = {},
+    ): Promise<DeviceConnection> {
         const waker = await this.startWaker();
         const creds = await waker.credentials.getForDevice(
             this.description,
@@ -34,7 +60,7 @@ export class ResolvedDevice implements IResolvedDevice {
             config.login,
         );
 
-        return new DeviceConnection(socket);
+        return new DeviceConnection(this.resolve.bind(this), socket);
     }
 
     public isSupported(capability: DeviceCapability): boolean {

@@ -38,4 +38,6 @@ export interface IDevice {
 
 export interface IResolvedDevice extends IDevice {
     isSupported(capability: DeviceCapability): boolean;
+
+    resolve(config?: INetworkConfig): Promise<IDiscoveredDevice>;
 }

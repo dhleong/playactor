@@ -58,6 +58,9 @@ export class PendingDevice implements IDevice {
                         discoveryFactory: StandardDiscoveryNetworkFactory,
                     }),
                     device,
+                    this.networkConfig,
+                    this.discoveryConfig,
+                    this.discoveryFactory,
                 );
                 this.delegate = newDelegate;
                 return newDelegate;

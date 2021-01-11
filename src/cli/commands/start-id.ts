@@ -1,6 +1,20 @@
-import { Command, command, param } from "clime";
+import {
+    Command,
+    command,
+    option,
+    param,
+} from "clime";
 
 import { DeviceOptions } from "../options";
+
+class StartTitleOptions extends DeviceOptions {
+    @option({
+        name: "no-auto-quit",
+        description: "Don't quit an already running app",
+        toggle: true,
+    })
+    public dontAutoQuit = false;
+}
 
 @command({
     description: "Start an app or game by its Title ID",
@@ -12,12 +26,14 @@ export default class extends Command {
             required: true,
         })
         titleId: string,
-        deviceSpec: DeviceOptions,
+        deviceSpec: StartTitleOptions,
     ) {
         const device = await deviceSpec.findDevice();
         const connection = await device.openConnection(deviceSpec.connectionConfig);
         try {
-            await connection.startTitleId(titleId);
+            await connection.startTitleId(titleId, {
+                autoQuitExisting: !deviceSpec.dontAutoQuit,
+            });
         } finally {
             await connection.close();
         }

@@ -39,8 +39,10 @@ export class RemoteControlProc implements IDeviceProc {
         if (delay > 0) {
             // give it some time to think---if we try to OpenRc too soon
             // after connecting, the ps4 seems to disregard
-            debug("socket just opened; wait before remote control");
+            debug("socket just opened; wait", delay, "ms before remote control");
             await delayMillis(delay);
+        } else {
+            debug("socket opened", msSinceConnect, "ms ago");
         }
 
         debug("open RC");

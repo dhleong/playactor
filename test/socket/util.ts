@@ -77,6 +77,7 @@ export class FakeDiscoveredDevice implements IDiscoveredDevice {
     public type = DeviceType.PS4;
     public address: IDeviceAddress = { address: "", port: 42, family: "IPv4" };
     public discoveryVersion: DiscoveryVersion = DiscoveryVersions.PS4;
+    public extras = {};
     public systemVersion = "0";
     public id = "firefly";
     public name = "serenity";
