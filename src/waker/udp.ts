@@ -26,7 +26,7 @@ export class UdpWakerNetwork implements IWakerNetwork {
         const socket = this.socket ?? await this.open();
         const wakePort = wakePortsByType[device.type];
         if (!wakePort) {
-            throw new Error(`Unexpected discovery protocol: ${device.discoveryVersion}`);
+            throw new Error(`Unexpected device type: ${device.type}`);
         }
 
         return new Promise<void>((resolve, reject) => {

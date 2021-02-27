@@ -177,7 +177,7 @@ export class UdpDiscoveryNetworkFactory implements IDiscoveryNetworkFactory {
                     hostRequestPort: parseInt(message.data["host-request-port"], 10),
                     extras: extractDeviceExtras(message),
 
-                    discoveryVersion: message.version,
+                    discoveryVersion: message.data["device-discovery-protocol-version"] as DiscoveryVersion ?? message.version,
                     systemVersion: message.data["system-version"],
 
                     id: message.data["host-id"],
