@@ -65,6 +65,14 @@ export class OauthRequester implements ICredentialRequester {
         return extractAccountId(accountInfo);
     }
 
+    public async registerWithDevice(device: IDiscoveredDevice, accountId: string, pin: string) {
+        const registration = new RemotePlayRegistration();
+        await registration.register(device, {
+            accountId,
+            pin,
+        });
+    }
+
     public requestForDevice(device: IDiscoveredDevice): Promise<ICredentials> {
         throw new Error(`Method not implemented@${device}`);
     }

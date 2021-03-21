@@ -20,8 +20,8 @@ export class CryptoCodec implements IPacketCodec {
 
     constructor(
         private readonly initVector: Buffer,
-        private readonly algorithm: string = CRYPTO_ALGORITHM,
         public readonly seed: Buffer = randomSeed,
+        private readonly algorithm: string = CRYPTO_ALGORITHM,
     ) {
         this.cipher = crypto.createCipheriv(
             algorithm,
