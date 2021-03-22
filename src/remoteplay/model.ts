@@ -32,3 +32,39 @@ export function remotePlayVersionToString(version: RemotePlayVersion) {
         case RemotePlayVersion.PS5_1: return "1.0";
     }
 }
+
+export enum ErrorReason {
+    FAILED,
+    INVALID_PSN_ID,
+    IN_USE,
+    CRASH,
+    RP_VERSION,
+    UNKNOWN,
+}
+
+const errorCodes = {
+    "80108b09": ErrorReason.FAILED,
+    "80108b02": ErrorReason.INVALID_PSN_ID,
+    "80108b10": ErrorReason.IN_USE,
+    "80108b15": ErrorReason.CRASH,
+    "80108b11": ErrorReason.RP_VERSION,
+    "80108bff": ErrorReason.UNKNOWN,
+};
+
+export function errorReason(errorCode: string): ErrorReason {
+    return (errorCodes as any)[errorCode.toLowerCase()] ?? ErrorReason.UNKNOWN;
+}
+
+const errorReasonStrings = {
+    [ErrorReason.FAILED]: "Registration failed, probably invalid PIN",
+    [ErrorReason.INVALID_PSN_ID]: "Invalid PSN ID",
+    [ErrorReason.IN_USE]: "Remote is already in use",
+    [ErrorReason.CRASH]: "Remote Play on Console crashed",
+    [ErrorReason.RP_VERSION]: "RP-Version mismatch",
+    [ErrorReason.UNKNOWN]: "Other Error",
+};
+
+export function errorReasonString(errorCode: string) {
+    const reason = errorReason(errorCode);
+    return errorReasonStrings[reason] ?? errorReasonStrings[ErrorReason.UNKNOWN];
+}

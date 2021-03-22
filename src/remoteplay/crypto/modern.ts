@@ -8,6 +8,7 @@ import { ICryptoStrategy } from "./model";
 
 const SEED_BYTES_COUNT = 16;
 const PADDING_BYTES = 480;
+const CRYPTO_ALGORITHM = "aes-128-cfb";
 
 const hmacKeys = {
     [RemotePlayVersion.PS5_1]: "464687b349ca8ce859c5270f5d7a69d6",
@@ -60,13 +61,14 @@ function generateAeropause(
 ) {
     /* eslint-disable no-bitwise */
     const aeroKey = AERO_KEYS[deviceType];
-    const aeroKeyOff = padding.readInt8(0) >> 3;
-    const wurzelbert = deviceType === DeviceType.PS5 ? -0x2d : 0x29;
+    const aeroKeyOff = padding[0] >> 3;
+    const wurzelbert = deviceType === DeviceType.PS5 ? (-0x2d & 0xff) : 0x29;
 
     const aeropause = Buffer.alloc(SEED_BYTES_COUNT);
     for (let i = 0; i < SEED_BYTES_COUNT; ++i) {
         const k = aeroKey[i * 0x20 + aeroKeyOff];
-        aeropause.writeInt8((nonce[i] ^ k) + wurzelbert + i);
+        const v = (nonce[i] ^ k) + wurzelbert + i;
+        aeropause[i] = v;
     }
 
     return aeropause;
@@ -89,11 +91,11 @@ export class ModernCryptoStrategy implements ICryptoStrategy {
     public createCodec(nonce: Buffer) {
         const pinNumber = parseInt(this.pin, 10);
 
-        const padding = Buffer.alloc(PADDING_BYTES);
-        crypto.randomFillSync(padding);
+        const padding = Buffer.alloc(PADDING_BYTES).fill("A");
+        // crypto.randomFillSync(padding);
 
         /* eslint-disable no-bitwise */
-        const initKeyOff = padding.readInt8(0x18D) & 0x1F;
+        const initKeyOff = padding[0x18D] & 0x1F;
         /* eslint-enable no-bitwise */
 
         const iv = generateIv(this.version, nonce, this.counter);
@@ -103,10 +105,10 @@ export class ModernCryptoStrategy implements ICryptoStrategy {
         const AEROPAUSE_PART1_DESTINATION = 0xc7;
         const AEROPAUSE_PART2_DESTINATION = 0x191;
 
-        aeropause.copy(padding, AEROPAUSE_PART1_DESTINATION, 8);
+        aeropause.copy(padding, AEROPAUSE_PART1_DESTINATION, 8, 16);
         aeropause.copy(padding, AEROPAUSE_PART2_DESTINATION, 0, 8);
 
-        const codec = new CryptoCodec(iv, seed);
+        const codec = new CryptoCodec(iv, seed, CRYPTO_ALGORITHM);
         return {
             preface: padding,
             codec,

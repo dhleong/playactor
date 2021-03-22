@@ -67,10 +67,11 @@ export class OauthRequester implements ICredentialRequester {
 
     public async registerWithDevice(device: IDiscoveredDevice, accountId: string, pin: string) {
         const registration = new RemotePlayRegistration();
-        await registration.register(device, {
+        const result = await registration.register(device, {
             accountId,
             pin,
         });
+        console.log(result);
     }
 
     public requestForDevice(device: IDiscoveredDevice): Promise<ICredentials> {

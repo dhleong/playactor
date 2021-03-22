@@ -1,3 +1,6 @@
+import crypto from "crypto";
+import _debug from "debug";
+
 import { IDiscoveredDevice } from "../discovery/model";
 import { CryptoCodec } from "../socket/crypto-codec";
 import { LegacyCryptoStrategy } from "./crypto/legacy";
@@ -5,21 +8,29 @@ import { ICryptoStrategy } from "./crypto/model";
 import { ModernCryptoStrategy } from "./crypto/modern";
 import { RemotePlayVersion, remotePlayVersionFor } from "./model";
 
+const debug = _debug("playground:remoteplay:crypto");
+
 const CRYPTO_NONCE_LENGTH = 16;
 
 function generateNonce() {
-    // TODO actually fill with secure random bytes?
-    return Buffer.alloc(CRYPTO_NONCE_LENGTH);
+    const nonce = Buffer.alloc(CRYPTO_NONCE_LENGTH);
+    crypto.randomFillSync(nonce);
+    return nonce;
 }
 
 export class RemotePlayCrypto {
-    public static forDeviceAndPin(device: IDiscoveredDevice, pin: string) {
+    public static forDeviceAndPin(
+        device: IDiscoveredDevice,
+        pin: string,
+        nonce: Buffer = generateNonce(),
+    ) {
         const version = remotePlayVersionFor(device);
         const strategy = version < RemotePlayVersion.PS4_10
             ? new LegacyCryptoStrategy(version, pin)
             : new ModernCryptoStrategy(device.type, version, pin);
 
-        return new RemotePlayCrypto(strategy);
+        debug("selected", strategy, "for remote play version", RemotePlayVersion[version]);
+        return new RemotePlayCrypto(strategy, nonce);
     }
 
     private readonly codec: CryptoCodec;
@@ -27,7 +38,7 @@ export class RemotePlayCrypto {
 
     constructor(
         public readonly strategy: ICryptoStrategy,
-        nonce: Buffer = generateNonce(),
+        nonce: Buffer,
     ) {
         if (nonce.length !== CRYPTO_NONCE_LENGTH) {
             throw new Error(`Invalid nonce: ${nonce.toString("base64")}`);
@@ -54,9 +65,20 @@ export class RemotePlayCrypto {
             formatted += record[key];
             formatted += "\r\n";
         }
+        const payload = Buffer.from(formatted, "utf-8");
+
+        debug("formatted record:\n", formatted);
+        debug("encrypting record:", payload.toString("hex"));
+        debug("preface:", this.preface);
+
+        const encodedPayload = this.codec.encode(payload);
+        if (encodedPayload.length !== payload.length) {
+            throw new Error(`${encodedPayload.length} !== ${payload.length}`);
+        }
+
         return Buffer.concat([
             this.preface,
-            this.codec.encode(Buffer.from(formatted, "utf-8")),
+            encodedPayload,
         ]);
     }
 }
