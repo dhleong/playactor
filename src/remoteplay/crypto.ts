@@ -1,4 +1,6 @@
 import { IDiscoveredDevice } from "../discovery/model";
+import { CryptoCodec } from "../socket/crypto-codec";
+import { LegacyCryptoStrategy } from "./crypto/legacy";
 import { ICryptoStrategy } from "./crypto/model";
 import { ModernCryptoStrategy } from "./crypto/modern";
 import { RemotePlayVersion, remotePlayVersionFor } from "./model";
@@ -13,25 +15,35 @@ function generateNonce() {
 export class RemotePlayCrypto {
     public static forDeviceAndPin(device: IDiscoveredDevice, pin: string) {
         const version = remotePlayVersionFor(device);
-        if (version < RemotePlayVersion.PS4_10) {
-            // TODO support legacy firmware?
-            throw new Error(`Unsupported version ${RemotePlayVersion[version]}`);
-        }
+        const strategy = version < RemotePlayVersion.PS4_10
+            ? new LegacyCryptoStrategy(version, pin)
+            : new ModernCryptoStrategy(device.type, version, pin);
 
-        return new RemotePlayCrypto(new ModernCryptoStrategy(device.type, version, pin));
+        return new RemotePlayCrypto(strategy);
     }
+
+    private readonly codec: CryptoCodec;
+    private readonly preface: Buffer;
 
     constructor(
         public readonly strategy: ICryptoStrategy,
-        private readonly nonce: Buffer = generateNonce(),
+        nonce: Buffer = generateNonce(),
     ) {
         if (nonce.length !== CRYPTO_NONCE_LENGTH) {
             throw new Error(`Invalid nonce: ${nonce.toString("base64")}`);
         }
+
+        const { codec, preface } = strategy.createCodec(nonce);
+        this.codec = codec;
+        this.preface = preface;
     }
 
     public createSignedPayload(payload: Record<string, string>) {
         return this.encryptRecord(payload);
+    }
+
+    public decrypt(payload: Buffer) {
+        return this.codec.decode(payload);
     }
 
     private encryptRecord(record: Record<string, string>) {
@@ -42,10 +54,9 @@ export class RemotePlayCrypto {
             formatted += record[key];
             formatted += "\r\n";
         }
-        return this.encrypt(Buffer.from(formatted, "utf-8"));
-    }
-
-    private encrypt(bytes: Buffer) {
-        return this.strategy.encrypt(bytes, this.nonce);
+        return Buffer.concat([
+            this.preface,
+            this.codec.encode(Buffer.from(formatted, "utf-8")),
+        ]);
     }
 }

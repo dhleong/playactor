@@ -1,3 +1,8 @@
+import { CryptoCodec } from "../../socket/crypto-codec";
+
 export interface ICryptoStrategy {
-    encrypt(bytes: Buffer, nonce: Buffer): Buffer;
+    createCodec(nonce: Buffer): {
+        preface: Buffer,
+        codec: CryptoCodec,
+    };
 }

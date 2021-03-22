@@ -86,7 +86,7 @@ export class ModernCryptoStrategy implements ICryptoStrategy {
     ) {
     }
 
-    public encrypt(bytes: Buffer, nonce: Buffer): Buffer {
+    public createCodec(nonce: Buffer) {
         const pinNumber = parseInt(this.pin, 10);
 
         const padding = Buffer.alloc(PADDING_BYTES);
@@ -107,6 +107,9 @@ export class ModernCryptoStrategy implements ICryptoStrategy {
         aeropause.copy(padding, AEROPAUSE_PART2_DESTINATION, 0, 8);
 
         const codec = new CryptoCodec(iv, seed);
-        return Buffer.concat([padding, codec.encode(bytes)]);
+        return {
+            preface: padding,
+            codec,
+        };
     }
 }

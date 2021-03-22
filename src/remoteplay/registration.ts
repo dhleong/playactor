@@ -1,3 +1,4 @@
+import _debug from "debug";
 import got from "got";
 
 import {
@@ -5,6 +6,8 @@ import {
 } from "../discovery/model";
 import { RemotePlayCrypto } from "./crypto";
 import { RemotePlayVersion, remotePlayVersionFor, remotePlayVersionToString } from "./model";
+
+const debug = _debug("playground:remoteplay:registration");
 
 const REGISTRATION_PORT = 9295;
 
@@ -27,13 +30,22 @@ export class RemotePlayRegistration {
             "Np-AccountId": credentials.accountId,
         });
 
-        await got.post(this.urlFor(device), {
+        const result = await got.post(this.urlFor(device), {
             body,
             headers: {
                 "User-Agent": "remoteplay Windows",
                 "RP-Version": this.versionFor(device),
             },
+            responseType: "buffer",
         });
+
+        debug("result headers:", result.headers);
+        debug("result body:", result.body);
+
+        const decoded = crypto.decrypt(result.body);
+        debug("result decrypted:", decoded);
+
+        return decoded;
     }
 
     private urlFor(device: IDiscoveredDevice) {
