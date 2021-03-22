@@ -2,8 +2,12 @@ import _debug from "debug";
 import got from "got";
 
 import {
+    DeviceType,
     IDiscoveredDevice,
 } from "../discovery/model";
+import { UdpDiscoveryNetworkFactory } from "../discovery/udp";
+import { DiscoveryVersions } from "../protocol";
+import { delayMillis } from "../util/async";
 import { RemotePlayCrypto } from "./crypto";
 import {
     errorReasonString, RemotePlayVersion, remotePlayVersionFor, remotePlayVersionToString,
@@ -21,6 +25,16 @@ export interface IRemotePlayCredentials {
 
 export interface IRemotePlayRegistrationCredentials extends IRemotePlayCredentials {
     pin: string;
+}
+
+export interface IDeviceRegistration {
+    "AP-Bssid": number;
+    "AP-Name": string; // eg: PS5
+    "PS5-Mac": string;
+    "PS5-RegistKey": number;
+    "PS5-Nickname": string; // eg: PS5-123
+    "RP-KeyType": number; // eg: 2
+    "RP-Key": string;
 }
 
 export class RemotePlayRegistration {
@@ -42,12 +56,72 @@ export class RemotePlayRegistration {
         device: IDiscoveredDevice,
         credentials: IRemotePlayRegistrationCredentials,
     ) {
+        // NOTE: this search step is important; it lets the device know
+        // that we're about to attempt a registration, I guess. If we
+        // don't perform it, our registration request WILL be rejected
+        await this.searchForDevice(device);
+
         const crypto = RemotePlayCrypto.forDeviceAndPin(device, credentials.pin);
         const body = this.createPayload(crypto, device, credentials);
 
         debug("request body", body.toString("hex"));
         debug("result length:", body.length);
 
+        const response = await this.sendRegistrationRequest(device, body);
+        const decoded = crypto.decrypt(response);
+        debug("result decrypted:", decoded.toString("hex"));
+
+        const message = decoded.toString("utf-8");
+        const registration = message.split("\r\n").reduce((m, line) => {
+            /* eslint-disable no-param-reassign */
+            const [k, v] = line.split(":");
+            m[k] = v.trim();
+            return m;
+            /* eslint-enable no-param-reassign */
+        }, {} as any) as IDeviceRegistration;
+
+        debug("registration map:", registration);
+        return registration;
+    }
+
+    private async searchForDevice(device: IDiscoveredDevice) {
+        const factory = new UdpDiscoveryNetworkFactory(REGISTRATION_PORT, DiscoveryVersions.PS5);
+
+        const type = device.type === DeviceType.PS5
+            ? "SRC3"
+            : "SRC2";
+
+        const response = device.type === DeviceType.PS5
+            ? "RES3"
+            : "RES2";
+
+        debug("Performing SEARCH with", type);
+        await new Promise<void>((resolve, reject) => {
+            const net = factory.createRawMessages({
+                localBindPort: REGISTRATION_PORT,
+            }, message => {
+                const asString = message.toString();
+                debug("RECEIVED", message, asString);
+                if (asString.substring(0, response.length) === response) {
+                    net.close();
+                    resolve();
+                }
+            });
+
+            setTimeout(() => reject(new Error("Timeout")), 30000);
+
+            net.sendBuffer(device.address.address, REGISTRATION_PORT, Buffer.from(type));
+        });
+
+        // NOTE: some devices may not accept requests immediately, so
+        // give them a moment
+        await delayMillis(100);
+    }
+
+    private async sendRegistrationRequest(
+        device: IDiscoveredDevice,
+        body: Buffer,
+    ) {
         const result = await got.post(this.urlFor(device), {
             body,
             headers: {
@@ -76,10 +150,7 @@ export class RemotePlayRegistration {
             throw new Error(message);
         }
 
-        const decoded = crypto.decrypt(result.body);
-        debug("result decrypted:", decoded);
-
-        return decoded;
+        return result.body;
     }
 
     private urlFor(device: IDiscoveredDevice) {

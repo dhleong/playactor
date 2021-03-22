@@ -94,7 +94,14 @@ export class UdpDiscoveryNetwork implements IDiscoveryNetwork {
             type,
             version: this.version,
         });
+        return this.sendBuffer(recipientAddress, recipientPort, message);
+    }
 
+    public async sendBuffer(
+        recipientAddress: string,
+        recipientPort: number,
+        message: Buffer,
+    ) {
         debug(
             "send:", message, " to ",
             recipientAddress, ":", recipientPort,
@@ -130,11 +137,8 @@ export class UdpDiscoveryNetworkFactory implements IDiscoveryNetworkFactory {
         config: INetworkConfig,
         onMessage: OnDiscoveryMessageHandler,
     ) {
-        const bindPort = config.localBindPort ?? 0;
-        const { socket, isNew } = this.socketManager.acquire(bindPort);
-
-        socket.on("message", (message, rinfo) => {
-            const parsed = parseMessage(message);
+        return this.createRawMessages(config, (buffer, rinfo) => {
+            const parsed = parseMessage(buffer);
             onMessage({
                 type: parsed.type,
                 sender: rinfo,
@@ -142,6 +146,16 @@ export class UdpDiscoveryNetworkFactory implements IDiscoveryNetworkFactory {
                 data: parsed,
             });
         });
+    }
+
+    public createRawMessages(
+        config: INetworkConfig,
+        onMessage: (buffer: Buffer, rinfo: dgram.RemoteInfo) => void,
+    ) {
+        const bindPort = config.localBindPort ?? 0;
+        const { socket, isNew } = this.socketManager.acquire(bindPort);
+
+        socket.on("message", onMessage);
 
         if (isNew) {
             debug("created new socket for ", config);

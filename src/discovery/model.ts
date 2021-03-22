@@ -1,3 +1,5 @@
+import dgram from "dgram";
+
 import { DiscoveryVersion } from "../protocol";
 
 export interface IDiscoveryConfig {
@@ -96,9 +98,20 @@ export interface IDiscoveryNetwork {
         type: string,
         data?: Record<DiscoveryKey | string, unknown>,
     ): Promise<void>;
+
+    sendBuffer(
+        recipientAddress: string,
+        recipientPort: number,
+        message: Buffer,
+    ): Promise<void>;
 }
 
 export interface IDiscoveryNetworkFactory {
+    createRawMessages(
+        config: INetworkConfig,
+        onMessage: (buffer: Buffer, rinfo: dgram.RemoteInfo) => void,
+    ): IDiscoveryNetwork;
+
     createMessages(
         config: INetworkConfig,
         onMessage: OnDiscoveryMessageHandler,

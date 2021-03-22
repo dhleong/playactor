@@ -28,4 +28,16 @@ export class CompositeDiscoveryNetwork implements IDiscoveryNetwork {
             data,
         )));
     }
+
+    public async sendBuffer(
+        recipientAddress: string,
+        recipientPort: number,
+        message: Buffer,
+    ) {
+        await Promise.all(this.delegates.map(d => d.sendBuffer(
+            recipientAddress,
+            recipientPort,
+            message,
+        )));
+    }
 }

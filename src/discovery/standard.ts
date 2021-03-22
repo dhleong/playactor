@@ -1,3 +1,5 @@
+import dgram from "dgram";
+
 import { DiscoveryVersions } from "../protocol";
 import { wakePortsByType } from "../waker/udp";
 
@@ -39,6 +41,15 @@ export const StandardDiscoveryNetworkFactory: IDiscoveryNetworkFactory = {
     ): IDiscoveryNetwork {
         return new CompositeDiscoveryNetwork(
             standardFactories.map(factory => factory.createMessages(config, onMessage)),
+        );
+    },
+
+    createRawMessages(
+        config: INetworkConfig,
+        onMessage: (buffer: Buffer, rinfo: dgram.RemoteInfo) => void,
+    ): IDiscoveryNetwork {
+        return new CompositeDiscoveryNetwork(
+            standardFactories.map(factory => factory.createRawMessages(config, onMessage)),
         );
     },
 };
