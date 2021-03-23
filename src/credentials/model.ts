@@ -22,6 +22,10 @@ export interface IRemotePlayCredentials {
 
 export type ICredentials = ISecondScreenCredentials | IRemotePlayCredentials;
 
+export function isRemotePlay(credentials: ICredentials): credentials is IRemotePlayCredentials {
+    return credentials["auth-type"] === "R";
+}
+
 export interface ICredentialStorage {
     read(deviceId: string): Promise<ICredentials | null>;
     write(deviceId: string, credentials: ICredentials): Promise<void>;

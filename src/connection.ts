@@ -1,8 +1,9 @@
 import { RemotePlayDeviceConnection } from "./connection/remoteplay";
 import { SecondScreenDeviceConnection } from "./connection/secondscreen";
-import { ICredentials } from "./credentials/model";
+import { ICredentials, IRemotePlayCredentials, isRemotePlay } from "./credentials/model";
 import { IConnectionConfig, IResolvedDevice } from "./device/model";
 import { IDiscoveredDevice } from "./discovery/model";
+import { openSession } from "./remoteplay/session";
 import { openSocket } from "./socket/open";
 import { Waker } from "./waker";
 
@@ -11,9 +12,15 @@ export async function openRemotePlay(
     device: IResolvedDevice,
     discovered: IDiscoveredDevice,
     config: IConnectionConfig,
-    creds: ICredentials,
+    creds: IRemotePlayCredentials,
 ) {
     await waker.wake(discovered);
+
+    const session = await openSession(
+        discovered,
+        config,
+        creds,
+    );
 
     return new RemotePlayDeviceConnection(
         waker,
@@ -21,6 +28,7 @@ export async function openRemotePlay(
         device.resolve.bind(device),
         config,
         creds,
+        session,
     );
 }
 
@@ -53,7 +61,7 @@ export function openConnection(
     config: IConnectionConfig,
     creds: ICredentials,
 ) {
-    if (creds["auth-type"] === "R") {
+    if (isRemotePlay(creds)) {
         return openRemotePlay(waker, device, discovered, config, creds);
     }
     return openSecondScreen(waker, device, discovered, config, creds);

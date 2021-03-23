@@ -1,8 +1,13 @@
-import { ICredentials } from "../credentials/model";
+import _debug from "debug";
+
+import { IRemotePlayCredentials } from "../credentials/model";
 import { IConnectionConfig } from "../device/model";
 import { DeviceStatus, IDiscoveredDevice } from "../discovery/model";
+import { RemotePlayCommand, RemotePlaySession } from "../remoteplay/session";
 import { Waker } from "../waker";
 import { IDeviceConnection } from "./model";
+
+const debug = _debug("playactor:connection:remoteplay");
 
 export class RemotePlayDeviceConnection implements IDeviceConnection {
     private isClosed = false;
@@ -13,7 +18,8 @@ export class RemotePlayDeviceConnection implements IDeviceConnection {
         public readonly device: IDiscoveredDevice,
         private readonly resolveDevice: () => Promise<IDiscoveredDevice>,
         public readonly config: IConnectionConfig,
-        public readonly creds: ICredentials,
+        public readonly creds: IRemotePlayCredentials,
+        private session: RemotePlaySession,
     ) {}
 
     public get isConnected(): boolean {
@@ -28,9 +34,18 @@ export class RemotePlayDeviceConnection implements IDeviceConnection {
         const { status } = await this.resolveDevice();
         if (status === DeviceStatus.STANDBY) {
             // nop
-
+            debug("device already in standby");
+            return;
         }
 
-        // TODO
+        await this.withSession(s => s.sendCommand(RemotePlayCommand.STANDBY));
+    }
+
+    private async withSession<T>(
+        block: (session: RemotePlaySession) => Promise<T>,
+    ): Promise<T> {
+        // TODO: we may need to restart the session if the device
+        // has gone to sleep in the meantime, for example
+        return block(this.session);
     }
 }
