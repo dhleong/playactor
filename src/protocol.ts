@@ -1,4 +1,4 @@
-import { DiscoveryVersion, isDiscoveryKey } from "./discovery/model";
+import { DiscoveryVersion, outgoingDiscoveryKeys } from "./discovery/model";
 
 export function formatDiscoveryMessage({
     data,
@@ -12,7 +12,7 @@ export function formatDiscoveryMessage({
     let formatted = "";
     if (data) {
         for (const key of Object.keys(data)) {
-            if (!isDiscoveryKey(key)) continue;
+            if (!outgoingDiscoveryKeys.has(key)) continue;
             formatted += `${key}:${data[key]}\n`;
         }
     }

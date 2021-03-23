@@ -35,21 +35,25 @@ export interface IDeviceAddress {
     family: "IPv4" | "IPv6";
 }
 
-export type DiscoveryKey =
-    "host-id"
-    | "host-type"
-    | "host-request-port"
-    | "host-name"
-    | "system-version"
-    | "device-discovery-protocol-version";
-
-const discoveryKeys = new Set([
+const discoveryKeysArrray = [
     "host-id",
     "host-type",
     "host-request-port",
     "host-name",
     "system-version",
     "device-discovery-protocol-version",
+] as const;
+
+export type DiscoveryKey = typeof discoveryKeysArrray[number];
+
+const discoveryKeys: Set<string> = new Set(discoveryKeysArrray);
+
+export const outgoingDiscoveryKeys = new Set([
+    "app-type",
+    "auth-type",
+    "client-type",
+    "model",
+    "user-credential",
 ]);
 
 export function isDiscoveryKey(s: string): s is DiscoveryKey {
