@@ -22,6 +22,10 @@ export default class extends Command {
         const device = await deviceSpec.findDevice();
         const connection = await device.openConnection(deviceSpec.connectionConfig);
         try {
+            if (!connection.openKeyboard) {
+                throw new Error("osk-submit not supported for this device");
+            }
+
             const osk = await connection.openKeyboard();
 
             if (text) {

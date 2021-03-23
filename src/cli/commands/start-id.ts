@@ -31,6 +31,10 @@ export default class extends Command {
         const device = await deviceSpec.findDevice();
         const connection = await device.openConnection(deviceSpec.connectionConfig);
         try {
+            if (!connection.startTitleId) {
+                throw new Error("start-id not supported for this device");
+            }
+
             await connection.startTitleId(titleId, {
                 autoQuitExisting: !deviceSpec.dontAutoQuit,
             });

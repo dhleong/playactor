@@ -1,4 +1,5 @@
 import _debug from "debug";
+import { UnsupportedDeviceError } from "../connection/model";
 
 import { ICredentials } from "../credentials/model";
 import { DeviceType, IDiscoveredDevice, INetworkConfig } from "../discovery/model";
@@ -22,12 +23,6 @@ const debug = _debug("playground:socket:open");
 export class ConnectionRefusedError extends Error {
     constructor() {
         super("Connection refused; if unauthenticated, try restarting the device");
-    }
-}
-
-export class UnsupportedDeviceError extends Error {
-    constructor() {
-        super("Device doesn't support connection");
     }
 }
 

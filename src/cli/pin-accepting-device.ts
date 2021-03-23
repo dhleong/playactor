@@ -1,7 +1,7 @@
 import { ExpectedError } from "clime";
 import _debug from "debug";
+import { IDeviceConnection } from "../connection/model";
 
-import { DeviceConnection } from "../connection";
 import { IConnectionConfig, IDevice } from "../device/model";
 import { INetworkConfig } from "../discovery/model";
 import { RpcError } from "../socket/helpers";
@@ -49,7 +49,7 @@ export class PinAcceptingDevice implements IDevice {
     private async tryResolveError(
         e: any,
         config: IConnectionConfig = {},
-    ): Promise<DeviceConnection> {
+    ): Promise<IDeviceConnection> {
         if (!(e instanceof RpcError)) {
             debug("non-login error encountered: ", e);
             throw e;

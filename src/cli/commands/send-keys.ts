@@ -64,6 +64,9 @@ export default class extends Command {
         const device = await deviceSpec.findDevice();
         const connection = await device.openConnection(deviceSpec.connectionConfig);
         try {
+            if (!connection.sendKeys) {
+                throw new Error("send-keys not supported for this device");
+            }
             await connection.sendKeys(keyPresses);
         } finally {
             await connection.close();

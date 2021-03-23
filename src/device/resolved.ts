@@ -1,9 +1,9 @@
-import { DeviceConnection } from "../connection";
+import { openConnection } from "../connection";
+import { IDeviceConnection } from "../connection/model";
 import { Discovery } from "../discovery";
 import {
     IDiscoveredDevice, IDiscoveryConfig, IDiscoveryNetworkFactory, INetworkConfig,
 } from "../discovery/model";
-import { openSocket } from "../socket/open";
 import { IWakerFactory } from "../waker";
 
 import { DeviceCapability, IConnectionConfig, IResolvedDevice } from "./model";
@@ -45,22 +45,13 @@ export class ResolvedDevice implements IResolvedDevice {
 
     public async openConnection(
         config: IConnectionConfig = {},
-    ): Promise<DeviceConnection> {
+    ): Promise<IDeviceConnection> {
         const waker = await this.startWaker();
         const creds = await waker.credentials.getForDevice(
             this.description,
         );
 
-        const socket = await openSocket(
-            waker.networkFactory,
-            this.description,
-            creds,
-            config.socket,
-            config.network,
-            config.login,
-        );
-
-        return new DeviceConnection(this.resolve.bind(this), socket);
+        return openConnection(waker, this, this.description, config, creds);
     }
 
     public isSupported(capability: DeviceCapability): boolean {

@@ -1,4 +1,4 @@
-import { DeviceConnection } from "../connection";
+import { IDeviceConnection } from "../connection/model";
 import { IDiscoveredDevice, INetworkConfig } from "../discovery/model";
 import { ISocketConfig } from "../socket/model";
 import { ILoginConfig } from "../socket/packets/outgoing/login";
@@ -33,7 +33,7 @@ export interface IDevice {
      * Open a connection to the device for additional features,
      * waking it if necessary.
      */
-    openConnection(config?: IConnectionConfig): Promise<DeviceConnection>;
+    openConnection(config?: IConnectionConfig): Promise<IDeviceConnection>;
 }
 
 export interface IResolvedDevice extends IDevice {
