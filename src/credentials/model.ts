@@ -1,12 +1,26 @@
 import { IDiscoveredDevice } from "../discovery/model";
+import { IDeviceRegistration } from "../remoteplay/registration";
 
-export interface ICredentials {
-    "app-type"?: "r";
-    "auth-type": "C" | "R";
-    "client-type": "a" | "i" | "vr";
-    "model"?: "m";
+export interface ISecondScreenCredentials {
+    "app-type": "c";
+    "auth-type": "C"
+    "client-type": "a" | "i";
+    "model"?: "m" | "w";
     "user-credential": string;
 }
+
+export interface IRemotePlayCredentials {
+    "app-type": "r";
+    "auth-type": "R";
+    "client-type": "vr";
+    "model"?: "m" | "w";
+    "user-credential": string;
+
+    accountId: string;
+    registration: IDeviceRegistration;
+}
+
+export type ICredentials = ISecondScreenCredentials | IRemotePlayCredentials;
 
 export interface ICredentialStorage {
     read(deviceId: string): Promise<ICredentials | null>;

@@ -1,5 +1,6 @@
 import _debug from "debug";
 import got from "got";
+import { IInputOutput } from "../../cli/io";
 
 import { IDiscoveredDevice } from "../../discovery/model";
 import { RemotePlayRegistration } from "../../remoteplay/registration";
@@ -40,8 +41,29 @@ export function extractAccountId(accountInfo: RawAccountInfo) {
     return buffer.toString("base64");
 }
 
+export function registKeyToCredential(registKey: string) {
+    // this is so bizarre, but here it is:
+    const buffer = Buffer.alloc(registKey.length / 2);
+    for (let i = 0; i < registKey.length; i += 2) {
+        // 1. Every 2 chars in registKey is interpreted as a hex byte
+        const byteAsString = registKey.slice(i, i + 2);
+        const byte = parseInt(byteAsString, 16);
+        buffer.writeUInt8(byte, i / 2);
+    }
+
+    // 2. The bytes are treated as a utf-8-encoded string
+    const asString = buffer.toString("utf-8");
+
+    // 3. That string is parsed as a hex-encoded long
+    const asNumber = BigInt(`0x${asString}`);
+
+    // Finally, we convert that back into a string for storage
+    return asNumber.toString();
+}
+
 export class OauthRequester implements ICredentialRequester {
     constructor(
+        private io: IInputOutput,
         private strategy: OauthStrategy,
     ) {}
 
@@ -67,15 +89,38 @@ export class OauthRequester implements ICredentialRequester {
 
     public async registerWithDevice(device: IDiscoveredDevice, accountId: string, pin: string) {
         const registration = new RemotePlayRegistration();
-        const result = await registration.register(device, {
+        return registration.register(device, {
             accountId,
             pin,
         });
-        console.log(result);
     }
 
-    public requestForDevice(device: IDiscoveredDevice): Promise<ICredentials> {
-        throw new Error(`Method not implemented@${device}`);
+    public async requestForDevice(device: IDiscoveredDevice): Promise<ICredentials> {
+        const accountId = await this.performOauth();
+
+        this.io.logInfo("Registering via Remote Play. Go to Settings > System > Remote Play > Link Device");
+        const pin = await this.io.prompt("Enter PIN here> ");
+
+        const registration = await this.registerWithDevice(device, accountId, pin);
+
+        const registKey = registration["PS5-RegistKey"]
+            ?? registration["PS4-RegistKey"];
+        if (!registKey) {
+            throw new Error("Did not receive reigstration key");
+        }
+
+        const credential = registKeyToCredential(registKey);
+
+        return {
+            "app-type": "r",
+            "auth-type": "R",
+            "client-type": "vr",
+            model: "w",
+            "user-credential": credential,
+
+            accountId,
+            registration,
+        };
     }
 
     private async exchangeCodeForAccess(code: string) {

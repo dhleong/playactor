@@ -28,13 +28,17 @@ export interface IRemotePlayRegistrationCredentials extends IRemotePlayCredentia
 }
 
 export interface IDeviceRegistration {
-    "AP-Bssid": number;
+    "AP-Bssid": string;
     "AP-Name": string; // eg: PS5
-    "PS5-Mac": string;
-    "PS5-RegistKey": number;
-    "PS5-Nickname": string; // eg: PS5-123
-    "RP-KeyType": number; // eg: 2
+    "PS5-Mac"?: string;
+    "PS5-RegistKey"?: string;
+    "PS5-Nickname"?: string; // eg: PS5-123
+    "RP-KeyType": string; // eg: 2
     "RP-Key": string;
+
+    "PS4-Mac"?: string;
+    "PS4-RegistKey"?: string;
+    "PS4-Nickname"?: string; // eg: PS5-123
 }
 
 export class RemotePlayRegistration {
@@ -97,18 +101,20 @@ export class RemotePlayRegistration {
 
         debug("Performing SEARCH with", type);
         await new Promise<void>((resolve, reject) => {
+            let timeout: NodeJS.Timeout;
             const net = factory.createRawMessages({
                 localBindPort: REGISTRATION_PORT,
             }, message => {
                 const asString = message.toString();
                 debug("RECEIVED", message, asString);
                 if (asString.substring(0, response.length) === response) {
+                    clearTimeout(timeout);
                     net.close();
                     resolve();
                 }
             });
 
-            setTimeout(() => reject(new Error("Timeout")), 30000);
+            timeout = setTimeout(() => reject(new Error("Timeout")), 30000);
 
             net.sendBuffer(device.address.address, REGISTRATION_PORT, Buffer.from(type));
         });
