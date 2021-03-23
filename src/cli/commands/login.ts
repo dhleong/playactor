@@ -1,6 +1,6 @@
 import { Command, command, metadata } from "clime";
+import { UnsupportedDeviceError } from "../../connection/model";
 import { DeviceType } from "../../discovery/model";
-import { UnsupportedDeviceError } from "../../socket/open";
 
 import { DeviceOptions } from "../options";
 
