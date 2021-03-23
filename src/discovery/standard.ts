@@ -1,11 +1,11 @@
 import dgram from "dgram";
 
-import { DiscoveryVersions } from "../protocol";
 import { wakePortsByType } from "../waker/udp";
 
 import { CompositeDiscoveryNetwork } from "./composite";
 import {
     DeviceType,
+    DiscoveryVersions,
     IDiscoveryNetwork,
     IDiscoveryNetworkFactory,
     INetworkConfig,

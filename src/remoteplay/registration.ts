@@ -3,10 +3,10 @@ import got from "got";
 
 import {
     DeviceType,
+    DiscoveryVersions,
     IDiscoveredDevice,
 } from "../discovery/model";
 import { UdpDiscoveryNetworkFactory } from "../discovery/udp";
-import { DiscoveryVersions } from "../protocol";
 import { delayMillis } from "../util/async";
 import { RemotePlayCrypto } from "./crypto";
 import {

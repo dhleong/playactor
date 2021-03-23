@@ -1,12 +1,13 @@
 import _debug from "debug";
 import dgram from "dgram";
 
-import { DiscoveryVersion, formatDiscoveryMessage } from "../protocol";
+import { formatDiscoveryMessage } from "../protocol";
 import { parseMessage } from "./messages";
 
 import {
     DeviceStatus,
     DeviceType,
+    DiscoveryVersion,
     IDiscoveryMessage,
     IDiscoveryNetwork,
     IDiscoveryNetworkFactory,

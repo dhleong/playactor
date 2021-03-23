@@ -1,9 +1,4 @@
-export const DiscoveryVersions = {
-    PS4: "00020020",
-    PS5: "00030010",
-} as const;
-
-export type DiscoveryVersion = typeof DiscoveryVersions[keyof typeof DiscoveryVersions];
+import { DiscoveryVersion, isDiscoveryKey } from "./discovery/model";
 
 export function formatDiscoveryMessage({
     data,
@@ -14,11 +9,13 @@ export function formatDiscoveryMessage({
     type: string,
     version: DiscoveryVersion,
 }) {
-    const formatted = data
-        ? Object.keys(data).reduce(
-            (last, key) => `${last}${key}:${(data as any)[key]}\n`,
-            "",
-        ) : "";
+    let formatted = "";
+    if (data) {
+        for (const key of Object.keys(data)) {
+            if (!isDiscoveryKey(key)) continue;
+            formatted += `${key}:${data[key]}\n`;
+        }
+    }
 
     return Buffer.from(`${type} * HTTP/1.1\n${formatted}device-discovery-protocol-version:${version}\n`);
 }

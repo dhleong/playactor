@@ -1,6 +1,11 @@
 import dgram from "dgram";
 
-import { DiscoveryVersion } from "../protocol";
+export const DiscoveryVersions = {
+    PS4: "00020020",
+    PS5: "00030010",
+} as const;
+
+export type DiscoveryVersion = typeof DiscoveryVersions[keyof typeof DiscoveryVersions];
 
 export interface IDiscoveryConfig {
     pingIntervalMillis: number;
