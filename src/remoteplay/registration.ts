@@ -41,6 +41,19 @@ export interface IDeviceRegistration {
     "PS4-Nickname"?: string; // eg: PS5-123
 }
 
+const searchConfigs = {
+    [DeviceType.PS4]: {
+        type: "SRC2",
+        response: "RES2",
+        version: DiscoveryVersions.PS4,
+    },
+    [DeviceType.PS5]: {
+        type: "SRC3",
+        response: "RES3",
+        version: DiscoveryVersions.PS5,
+    },
+};
+
 export class RemotePlayRegistration {
     public createPayload(
         crypto: RemotePlayCrypto,
@@ -89,15 +102,9 @@ export class RemotePlayRegistration {
     }
 
     private async searchForDevice(device: IDiscoveredDevice) {
-        const factory = new UdpDiscoveryNetworkFactory(REGISTRATION_PORT, DiscoveryVersions.PS5);
+        const { type, response, version } = searchConfigs[device.type];
 
-        const type = device.type === DeviceType.PS5
-            ? "SRC3"
-            : "SRC2";
-
-        const response = device.type === DeviceType.PS5
-            ? "RES3"
-            : "RES2";
+        const factory = new UdpDiscoveryNetworkFactory(REGISTRATION_PORT, version);
 
         debug("Performing SEARCH with", type);
         await new Promise<void>((resolve, reject) => {
