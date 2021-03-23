@@ -52,6 +52,7 @@ export class Waker {
                 type: "WAKEUP",
                 version: device.discoveryVersion,
             });
+            debug("sending:", message.toString("hex"));
             await network.sendTo(device, message);
 
             await this.deviceAwakened(device, config);

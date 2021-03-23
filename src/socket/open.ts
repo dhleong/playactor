@@ -25,6 +25,12 @@ export class ConnectionRefusedError extends Error {
     }
 }
 
+export class UnsupportedDeviceError extends Error {
+    constructor() {
+        super("Device doesn't support connection");
+    }
+}
+
 function openConnection(
     device: IDiscoveredDevice,
     config: ISocketConfig,
@@ -37,7 +43,7 @@ function openConnection(
             );
 
         default:
-            throw new Error(`Unsupported protocol: ${device.discoveryVersion}`);
+            throw new UnsupportedDeviceError();
     }
 }
 

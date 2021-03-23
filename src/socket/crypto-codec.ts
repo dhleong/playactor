@@ -13,6 +13,7 @@ const debug = _debug("playground:socket:crypto");
 export class CryptoCodec implements IPacketCodec {
     public readonly paddingSize = 16;
 
+    private readonly padEncoding: boolean;
     private readonly cipher: crypto.Cipher;
     private readonly decipher: crypto.Decipher;
 
@@ -20,8 +21,8 @@ export class CryptoCodec implements IPacketCodec {
 
     constructor(
         private readonly initVector: Buffer,
-        private readonly algorithm: string = CRYPTO_ALGORITHM,
         public readonly seed: Buffer = randomSeed,
+        private readonly algorithm: string = CRYPTO_ALGORITHM,
     ) {
         this.cipher = crypto.createCipheriv(
             algorithm,
@@ -34,17 +35,25 @@ export class CryptoCodec implements IPacketCodec {
             this.initVector,
         );
         this.decipher.setAutoPadding(false);
+
+        this.padEncoding = algorithm === CRYPTO_ALGORITHM;
+        if (!this.padEncoding) {
+            this.cipher.setAutoPadding(false);
+        }
     }
 
     public encode(packet: Buffer): Buffer {
-        /* eslint-disable no-bitwise */
+        if (this.padEncoding) {
+            /* eslint-disable no-bitwise */
+            // pad the input the same way the client app does
+            const newLen = 1 + (packet.length - 1) / 16 << 4;
+            const bytes = Buffer.alloc(newLen);
+            packet.copy(bytes, 0, 0, packet.length);
+            return this.cipher.update(bytes);
+            /* eslint-enable no-bitwise */
+        }
 
-        // pad the input the same way the client app does
-        const newLen = 1 + (packet.length - 1) / 16 << 4;
-        const bytes = Buffer.alloc(newLen);
-        packet.copy(bytes, 0, 0, packet.length);
-
-        return this.cipher.update(bytes);
+        return this.cipher.update(packet);
     }
 
     public decode(packet: Buffer): Buffer {

@@ -1,4 +1,11 @@
-import { DiscoveryVersion } from "../protocol";
+import dgram from "dgram";
+
+export const DiscoveryVersions = {
+    PS4: "00020020",
+    PS5: "00030010",
+} as const;
+
+export type DiscoveryVersion = typeof DiscoveryVersions[keyof typeof DiscoveryVersions];
 
 export interface IDiscoveryConfig {
     pingIntervalMillis: number;
@@ -96,9 +103,20 @@ export interface IDiscoveryNetwork {
         type: string,
         data?: Record<DiscoveryKey | string, unknown>,
     ): Promise<void>;
+
+    sendBuffer(
+        recipientAddress: string,
+        recipientPort: number,
+        message: Buffer,
+    ): Promise<void>;
 }
 
 export interface IDiscoveryNetworkFactory {
+    createRawMessages(
+        config: INetworkConfig,
+        onMessage: (buffer: Buffer, rinfo: dgram.RemoteInfo) => void,
+    ): IDiscoveryNetwork;
+
     createMessages(
         config: INetworkConfig,
         onMessage: OnDiscoveryMessageHandler,

@@ -1,10 +1,11 @@
 import {
     DeviceStatus,
     DeviceType,
+    DiscoveryVersion,
+    DiscoveryVersions,
     IDeviceAddress,
     IDiscoveredDevice,
 } from "../../src/discovery/model";
-import { DiscoveryVersion, DiscoveryVersions } from "../../src/protocol";
 import {
     IDeviceProc,
     IDeviceProtocol,
@@ -59,7 +60,7 @@ export class FakeSocket implements IDeviceSocket {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    public setCodec(encoder: IPacketCodec) {
+    public setCodec(_encoder: IPacketCodec) {
         // nop
     }
 

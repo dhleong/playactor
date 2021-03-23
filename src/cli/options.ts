@@ -9,8 +9,10 @@ import { CredentialManager } from "../credentials";
 import { PendingDevice } from "../device/pending";
 import {
     defaultDiscoveryConfig,
+    DeviceType,
     IDiscoveredDevice,
     IDiscoveryConfig,
+    IDiscoveryNetworkFactory,
     INetworkConfig,
 } from "../discovery/model";
 import { StandardDiscoveryNetworkFactory } from "../discovery/standard";
@@ -26,6 +28,9 @@ import { PinAcceptingDevice } from "./pin-accepting-device";
 import { RejectingCredentialRequester } from "../credentials/rejecting-requester";
 import { CliPassCode } from "./pass-code";
 import { defaultSocketConfig, ISocketConfig } from "../socket/model";
+import { CliOauthStrategy } from "../credentials/oauth/cli";
+import { OauthCredentialRequester } from "../credentials/oauth/requester";
+import { DeviceTypeStrategyCredentialRequester } from "../credentials/device-type-strategy";
 
 const log = debug("playground:cli:options");
 
@@ -200,13 +205,7 @@ export class DeviceOptions extends DiscoveryOptions {
         );
         const credentialsRequester = this.dontAuthenticate
             ? new RejectingCredentialRequester("Not authenticated")
-            : new RootManagingCredentialRequester(
-                new MimCredentialRequester(
-                    networkFactory,
-                    networkConfig,
-                ),
-                proxiedUserId,
-            );
+            : this.buildCredentialsRequester(networkFactory, networkConfig, proxiedUserId);
         const credentials = new CredentialManager(
             credentialsRequester,
             credentialsStorage,
@@ -252,6 +251,30 @@ export class DeviceOptions extends DiscoveryOptions {
                 passCode: this.passCode?.value ?? "",
             },
         };
+    }
+
+    private buildCredentialsRequester(
+        networkFactory: IDiscoveryNetworkFactory,
+        networkConfig: INetworkConfig,
+        proxiedUserId: number,
+    ) {
+        const ps4 = new RootManagingCredentialRequester(
+            new MimCredentialRequester(
+                networkFactory,
+                networkConfig,
+            ),
+            proxiedUserId,
+        );
+
+        const ps5 = new OauthCredentialRequester(
+            this,
+            new CliOauthStrategy(this),
+        );
+
+        return new DeviceTypeStrategyCredentialRequester({
+            [DeviceType.PS4]: ps4,
+            [DeviceType.PS5]: ps5,
+        });
     }
 
     private configurePending() {
