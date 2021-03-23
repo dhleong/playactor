@@ -61,7 +61,7 @@ export function registKeyToCredential(registKey: string) {
     return asNumber.toString();
 }
 
-export class OauthRequester implements ICredentialRequester {
+export class OauthCredentialRequester implements ICredentialRequester {
     constructor(
         private io: IInputOutput,
         private strategy: OauthStrategy,
