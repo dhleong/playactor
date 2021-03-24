@@ -4,7 +4,7 @@ import { PacketReadState } from "../model";
 
 const minPacketLength = 4;
 
-const debug = _debug("playground:socket:length");
+const debug = _debug("playactor:socket:length");
 
 export class LengthDelimitedBufferReader {
     private currentBuffer?: Buffer;

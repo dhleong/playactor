@@ -15,7 +15,7 @@ export interface KeyPress {
     holdTimeMillis?: number;
 }
 
-const debug = _debug("playground:socket:RemoteControlProc");
+const debug = _debug("playactor:socket:RemoteControlProc");
 
 function sendKey(
     socket: IDeviceSocket,

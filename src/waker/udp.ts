@@ -9,7 +9,7 @@ export const wakePortsByType = {
     [DeviceType.PS5]: 9302,
 };
 
-const debug = _debug("playground:waker:udp");
+const debug = _debug("playactor:waker:udp");
 
 export class UdpWakerNetwork implements IWakerNetwork {
     private socket?: dgram.Socket;

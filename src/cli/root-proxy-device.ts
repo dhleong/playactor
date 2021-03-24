@@ -10,7 +10,7 @@ import { ConnectionRefusedError } from "../socket/open";
 import { ICliProxy } from "./cli-proxy";
 import { IInputOutput } from "./io";
 
-const debug = _debug("playground:cli:root");
+const debug = _debug("playactor:cli:root");
 
 const PROXIED_ID_ARG = "--proxied-user-id";
 

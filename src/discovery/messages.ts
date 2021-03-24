@@ -9,7 +9,7 @@ interface IParsedMessage {
 
 const STATUS_CODE_STANDBY = "620";
 
-const debug = _debug("playground:discovery:messages");
+const debug = _debug("playactor:discovery:messages");
 
 export function parseMessage(raw: Buffer): IParsedMessage {
     const rawString = raw.toString();

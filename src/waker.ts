@@ -14,7 +14,7 @@ import { formatDiscoveryMessage } from "./protocol";
 import { IWakerNetworkFactory } from "./waker/model";
 import { UdpWakerNetworkFactory } from "./waker/udp";
 
-const debug = _debug("playground:waker");
+const debug = _debug("playactor:waker");
 
 export enum WakeResult {
     ALREADY_AWAKE,

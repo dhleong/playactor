@@ -13,7 +13,7 @@ import {
     errorReasonString, RemotePlayVersion, remotePlayVersionFor, remotePlayVersionToString,
 } from "./model";
 
-const debug = _debug("playground:remoteplay:registration");
+const debug = _debug("playactor:remoteplay:registration");
 
 const REGISTRATION_PORT = 9295;
 const CLIENT_TYPE = "dabfa2ec873de5839bee8d3f4c0239c4282c07c25c6077a2931afcf0adc0d34f";

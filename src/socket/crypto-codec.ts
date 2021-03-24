@@ -8,7 +8,7 @@ const CRYPTO_ALGORITHM = "aes-128-cbc";
 // I don't think true randomness is required
 const randomSeed = Buffer.alloc(16, 0);
 
-const debug = _debug("playground:socket:crypto");
+const debug = _debug("playactor:socket:crypto");
 
 export class CryptoCodec implements IPacketCodec {
     public readonly paddingSize = 16;

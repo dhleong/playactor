@@ -46,7 +46,7 @@ You cannot send the actual x, square, etc. buttons. Each provided key
 will be sent sequentially.
 
 In addition, a key name may be followed by a colon and a duration in
-milliseconds to hold that key, eg: playground send-keys ps:1000
+milliseconds to hold that key, eg: playactor send-keys ps:1000
     `.trim(),
 })
 export default class extends Command {

@@ -3,7 +3,7 @@ import { PacketType } from "../types";
 
 export enum LoginResultError {
     /**
-     * The device playground is running on has not yet been registered
+     * The device playactor is running on has not yet been registered
      * with the PlayStation; a pin code displayed on the PlayStation
      * needs to be input as part of the LoginProc to complete
      * registration.

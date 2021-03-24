@@ -8,7 +8,7 @@ import { ICryptoStrategy } from "./crypto/model";
 import { ModernCryptoStrategy } from "./crypto/modern";
 import { RemotePlayVersion, remotePlayVersionFor } from "./model";
 
-const debug = _debug("playground:remoteplay:crypto");
+const debug = _debug("playactor:remoteplay:crypto");
 
 const CRYPTO_NONCE_LENGTH = 16;
 

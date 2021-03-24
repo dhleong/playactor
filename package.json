@@ -1,5 +1,5 @@
 {
-  "name": "playground",
+  "name": "playactor",
   "version": "0.1.0",
   "description": "play around with your playstation devices",
   "main": "dist/index.js",
@@ -16,6 +16,7 @@
     "test": "mocha -r ts-node/register 'test/**/*-test.ts'"
   },
   "keywords": [
+    "playstation",
     "ps4",
     "ps5",
     "wake",
@@ -23,18 +24,18 @@
     "remote"
   ],
   "bin": {
-    "playground": "./dist/cli/index.js"
+    "playactor": "./dist/cli/index.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dhleong/playground.git"
+    "url": "git+https://github.com/dhleong/playactor.git"
   },
   "author": "Daniel Leong",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/dhleong/playground/issues"
+    "url": "https://github.com/dhleong/playactor/issues"
   },
-  "homepage": "https://github.com/dhleong/playground#readme",
+  "homepage": "https://github.com/dhleong/playactor#readme",
   "devDependencies": {
     "@sinonjs/fake-timers": "^6.0.1",
     "@types/chai": "^4.2.14",

@@ -5,7 +5,7 @@ import { CLI, Shim } from "clime";
 import { RootProxyDevice } from "./root-proxy-device";
 
 // The second parameter is the path to folder that contains command modules.
-const cli = new CLI("playground", path.join(__dirname, "commands"));
+const cli = new CLI("playactor", path.join(__dirname, "commands"));
 
 if (process.argv[0].endsWith("ts-node")) {
     CLI.commandModuleExtension = ".ts";

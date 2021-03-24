@@ -18,10 +18,10 @@ export interface IEmulatorOptions {
 
 const defaultEmulatorOptions = {
     hostId: "1234567890AB",
-    hostName: "PlayGround",
+    hostName: "PlayActor",
 };
 
-const debug = _debug("playground:credentials:mim");
+const debug = _debug("playactor:credentials:mim");
 
 /**
  * The MimCredentialRequester works by emulating a PlayStation device

@@ -6,10 +6,10 @@ import { join as joinPath, dirname } from "path";
 import { ICredentials, ICredentialStorage } from "./model";
 
 export function determineDefaultFile() {
-    return joinPath(homedir(), ".config", "playground", "credentials.json");
+    return joinPath(homedir(), ".config", "playactor", "credentials.json");
 }
 
-const debug = _debug("playground:credentials:disk");
+const debug = _debug("playactor:credentials:disk");
 
 export class DiskCredentialsStorage implements ICredentialStorage {
     public readonly filePath: string;

@@ -33,7 +33,7 @@ export class RpcError extends Error {
     }
 }
 
-const rpcDebug = _debug("playground:socket:rpc");
+const rpcDebug = _debug("playactor:socket:rpc");
 
 export async function performRpc<R extends IResultPacket>(
     socket: IDeviceSocket,

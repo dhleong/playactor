@@ -13,7 +13,7 @@ import { HandshakeProc } from "./proc/handshake";
 import { LoginProc } from "./proc/login";
 import { TcpDeviceSocket } from "./tcp";
 
-const debug = _debug("playground:socket:open");
+const debug = _debug("playactor:socket:open");
 
 /**
  * If thrown when trying to authenticate, the device has probably

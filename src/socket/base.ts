@@ -8,7 +8,7 @@ import {
     PacketReadState,
 } from "./model";
 
-const debug = _debug("playground:socket:BufferPacketProcessor");
+const debug = _debug("playactor:socket:BufferPacketProcessor");
 
 export class BufferPacketProcessor {
     private reader?: IPacketReader;

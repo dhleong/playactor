@@ -32,7 +32,7 @@ import { CliOauthStrategy } from "../credentials/oauth/cli";
 import { OauthCredentialRequester } from "../credentials/oauth/requester";
 import { DeviceTypeStrategyCredentialRequester } from "../credentials/device-type-strategy";
 
-const log = debug("playground:cli:options");
+const log = debug("playactor:cli:options");
 
 export class InputOutputOptions extends Options implements IInputOutput {
     /* eslint-disable no-console */
@@ -86,7 +86,7 @@ export class InputOutputOptions extends Options implements IInputOutput {
 
     public async configureLogging() {
         if (this.enableDebug) {
-            debug.enable("playground:*");
+            debug.enable("playactor:*");
         }
     }
 }

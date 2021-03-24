@@ -32,7 +32,7 @@ const packets: {[key: number]: PacketConstructor} = {
     [PacketType.ServerStatus]: IncomingResultPacket,
 };
 
-const debug = _debug("playground:packets:v1");
+const debug = _debug("playactor:packets:v1");
 
 export class PacketReaderV1 implements IPacketReader {
     private readonly lengthDelimiter = new LengthDelimitedBufferReader();

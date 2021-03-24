@@ -3,7 +3,7 @@ import _debug from "debug";
 import { IDiscoveredDevice } from "../discovery/model";
 import { ICredentialRequester, ICredentials } from "./model";
 
-const debug = _debug("playground:credentials:root");
+const debug = _debug("playactor:credentials:root");
 
 export class RootMissingError extends Error {
 }

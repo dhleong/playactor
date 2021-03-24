@@ -7,7 +7,7 @@ import { RemotePlayRegistration } from "../../remoteplay/registration";
 import { ICredentialRequester, ICredentials } from "../model";
 import { OauthStrategy } from "./model";
 
-const debug = _debug("playground:credentials:oauth");
+const debug = _debug("playactor:credentials:oauth");
 
 // Remote Play Windows Client
 // TODO: it'd be nice to pull these for macOS and Linux so any

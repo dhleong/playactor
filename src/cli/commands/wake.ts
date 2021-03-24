@@ -4,7 +4,7 @@ import { Command, command, metadata } from "clime";
 
 import { DeviceOptions } from "../options";
 
-const debug = _debug("playground:commands:wake");
+const debug = _debug("playactor:commands:wake");
 
 @command({
     description: "Wake up the device",

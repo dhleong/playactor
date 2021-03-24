@@ -7,7 +7,7 @@ import { OskStartResultPacket } from "../packets/incoming/osk-start-result";
 import { OskStartPacket } from "../packets/outgoing/osk-start";
 import { PacketType } from "../packets/types";
 
-const debug = _debug("playground:socket:OpenKeyboardProc");
+const debug = _debug("playactor:socket:OpenKeyboardProc");
 
 export class OpenKeyboardProc implements IDeviceProc<OnScreenKeyboard> {
     public async perform(socket: IDeviceSocket) {

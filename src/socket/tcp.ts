@@ -21,7 +21,7 @@ const protocolsByVersion = {
     [DeviceType.PS5]: undefined,
 };
 
-const debug = _debug("playground:socket:tcp");
+const debug = _debug("playactor:socket:tcp");
 
 export class TcpDeviceSocket implements IDeviceSocket {
     public static connectTo(

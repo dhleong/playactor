@@ -17,7 +17,7 @@ import {
     OnDiscoveryMessageHandler,
 } from "./model";
 
-const debug = _debug("playground:discovery:udp");
+const debug = _debug("playactor:discovery:udp");
 
 const BROADCAST_ADDRESS = "255.255.255.255";
 
