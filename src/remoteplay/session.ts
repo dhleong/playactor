@@ -3,6 +3,7 @@ import _debug from "debug";
 import { IRemotePlayCredentials } from "../credentials/model";
 import { IConnectionConfig } from "../device/model";
 import { IDiscoveredDevice } from "../discovery/model";
+import { CRYPTO_NONCE_LENGTH } from "./crypto";
 import { RemotePlayVersion, remotePlayVersionFor, remotePlayVersionToString } from "./model";
 import { request, typedPath, urlWith } from "./protocol";
 
@@ -50,6 +51,14 @@ export async function openSession(
 
     const nonceBase64 = response.headers["rp-nonce"];
     debug("session init nonce=", nonceBase64);
+    if (typeof nonceBase64 !== "string") {
+        throw new Error(`Unexpected nonce format: "${nonceBase64}"`);
+    }
+
+    const nonce = Buffer.from(nonceBase64, "base64");
+    if (nonce.length !== CRYPTO_NONCE_LENGTH) {
+        throw new Error(`Unexpected nonce length: ${nonce.length}`);
+    }
 
     return new RemotePlaySession(
         device,

@@ -40,11 +40,10 @@ export class LegacyCryptoStrategy implements ICryptoStrategy {
 
     constructor(
         private readonly version: RemotePlayVersion,
-        private readonly pin: string,
     ) {}
 
-    public createCodec(nonce: Buffer) {
-        const pinNumber = parseInt(this.pin, 10);
+    public createCodecForPin(pin: string, nonce: Buffer) {
+        const pinNumber = parseInt(pin, 10);
 
         const padding = Buffer.alloc(PADDING_BYTES);
         crypto.randomFillSync(padding);

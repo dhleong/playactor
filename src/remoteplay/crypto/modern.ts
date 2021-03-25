@@ -84,12 +84,11 @@ export class ModernCryptoStrategy implements ICryptoStrategy {
     constructor(
         private readonly deviceType: DeviceType,
         private readonly version: RemotePlayVersion,
-        public readonly pin: string,
     ) {
     }
 
-    public createCodec(nonce: Buffer) {
-        const pinNumber = parseInt(this.pin, 10);
+    public createCodecForPin(pin: string, nonce: Buffer) {
+        const pinNumber = parseInt(pin, 10);
 
         const padding = Buffer.alloc(PADDING_BYTES).fill("A");
         // crypto.randomFillSync(padding);
