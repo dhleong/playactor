@@ -1,4 +1,5 @@
 import _debug from "debug";
+import { IDeviceRegistration } from "../credentials/model";
 
 import {
     DeviceType,
@@ -32,20 +33,6 @@ export interface IRemotePlayCredentials {
 
 export interface IRemotePlayRegistrationCredentials extends IRemotePlayCredentials {
     pin: string;
-}
-
-export interface IDeviceRegistration {
-    "AP-Bssid": string;
-    "AP-Name": string; // eg: PS5
-    "PS5-Mac"?: string;
-    "PS5-RegistKey"?: string;
-    "PS5-Nickname"?: string; // eg: PS5-123
-    "RP-KeyType": string; // eg: 2
-    "RP-Key": string;
-
-    "PS4-Mac"?: string;
-    "PS4-RegistKey"?: string;
-    "PS4-Nickname"?: string; // eg: PS5-123
 }
 
 const searchConfigs = {

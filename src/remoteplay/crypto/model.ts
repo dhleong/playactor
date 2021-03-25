@@ -1,3 +1,4 @@
+import { IRemotePlayCredentials } from "../../credentials/model";
 import { CryptoCodec } from "../../socket/crypto-codec";
 
 export interface ICryptoStrategy {
@@ -5,4 +6,9 @@ export interface ICryptoStrategy {
         preface: Buffer,
         codec: CryptoCodec,
     };
+
+    createCodecForAuth(
+        creds: IRemotePlayCredentials,
+        serverNonce: Buffer,
+    ): CryptoCodec;
 }

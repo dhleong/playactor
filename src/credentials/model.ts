@@ -1,5 +1,4 @@
 import { IDiscoveredDevice } from "../discovery/model";
-import { IDeviceRegistration } from "../remoteplay/registration";
 
 export interface ISecondScreenCredentials {
     "app-type": "c";
@@ -7,6 +6,20 @@ export interface ISecondScreenCredentials {
     "client-type": "a" | "i";
     "model"?: "m" | "w";
     "user-credential": string;
+}
+
+export interface IDeviceRegistration {
+    "AP-Bssid": string;
+    "AP-Name": string; // eg: PS5
+    "PS5-Mac"?: string;
+    "PS5-RegistKey"?: string;
+    "PS5-Nickname"?: string; // eg: PS5-123
+    "RP-KeyType": string; // eg: 2
+    "RP-Key": string;
+
+    "PS4-Mac"?: string;
+    "PS4-RegistKey"?: string;
+    "PS4-Nickname"?: string; // eg: PS5-123
 }
 
 export interface IRemotePlayCredentials {

@@ -8,6 +8,16 @@ const debug = _debug("playactor:remoteplay:protocol");
 
 export const REST_PORT = 9295;
 
+export function parseHexBytes(data: string) {
+    const buffer = Buffer.alloc(data.length / 2);
+    for (let i = 0; i < data.length; i += 2) {
+        const byteAsString = data.slice(i, i + 2);
+        const byte = parseInt(byteAsString, 16);
+        buffer.writeUInt8(byte, i / 2);
+    }
+    return buffer;
+}
+
 export function parseBody<R>(body: Buffer): R {
     const message = body.toString("utf-8");
     return message.split("\r\n").reduce((m, line) => {

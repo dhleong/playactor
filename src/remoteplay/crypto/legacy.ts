@@ -1,7 +1,9 @@
 import crypto from "crypto";
+import { IRemotePlayCredentials } from "../../credentials/model";
 import { CryptoCodec } from "../../socket/crypto-codec";
 
 import { RemotePlayVersion } from "../model";
+import { parseHexBytes } from "../protocol";
 import { ICryptoStrategy } from "./model";
 import { generateIv } from "./modern";
 
@@ -21,6 +23,11 @@ function generateSeed(pin: number) {
     return seed;
     /* eslint-enable no-bitwise */
 }
+
+const ECHO_A = [
+    0x01, 0x49, 0x87, 0x9b, 0x65, 0x39, 0x8b, 0x39,
+    0x4b, 0x3a, 0x8d, 0x48, 0xc3, 0x0a, 0xef, 0x51,
+];
 
 const ECHO_B = [
     0xe1, 0xec, 0x9c, 0x3a, 0xdd, 0xbd, 0x08, 0x85,
@@ -58,5 +65,24 @@ export class LegacyCryptoStrategy implements ICryptoStrategy {
             codec,
             preface: padding,
         };
+    }
+
+    public createCodecForAuth(
+        creds: IRemotePlayCredentials,
+        serverNonce: Buffer,
+    ): CryptoCodec {
+        const key = parseHexBytes(creds.registration["RP-Key"]);
+
+        /* eslint-disable no-bitwise */
+        const nonce = Buffer.from(
+            serverNonce.map((nonceValue, i) => (nonceValue - i - 0x27) ^ ECHO_A[i]).buffer,
+        );
+        const seed = Buffer.from(
+            key.map((keyValue, i) => ((keyValue - i + 0x34) ^ ECHO_B[i]) ^ serverNonce[i]).buffer,
+        );
+        /* eslint-enable no-bitwise */
+
+        const iv = generateIv(this.version, nonce, this.counter++);
+        return new CryptoCodec(iv, seed);
     }
 }

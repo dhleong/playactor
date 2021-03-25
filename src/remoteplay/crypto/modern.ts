@@ -1,9 +1,16 @@
 import crypto from "crypto";
+import { IRemotePlayCredentials } from "../../credentials/model";
 import { DeviceType } from "../../discovery/model";
 import { CryptoCodec } from "../../socket/crypto-codec";
 
 import { RemotePlayVersion } from "../model";
-import { AERO_KEYS, INIT_KEYS } from "./keys";
+import { parseHexBytes } from "../protocol";
+import {
+    AERO_KEYS,
+    AUTH_NONCE_KEYS,
+    AUTH_SEED_KEYS,
+    INIT_KEYS,
+} from "./keys";
 import { ICryptoStrategy } from "./model";
 
 const SEED_BYTES_COUNT = 16;
@@ -75,6 +82,66 @@ function generateAeropause(
     /* eslint-enable no-bitwise */
 }
 
+// NOTE: public for testing
+export function transformServerNonceForAuth(
+    deviceType: DeviceType,
+    serverNonce: Buffer,
+) {
+    /* eslint-disable no-bitwise */
+    const nonceTransforms = {
+        [DeviceType.PS4](v: number, i: number) { return v + 0x36 + i; },
+        [DeviceType.PS5](v: number, i: number) { return v - 0x2d - i; },
+    };
+
+    const keys = AUTH_NONCE_KEYS[deviceType];
+    const keyOffset = (serverNonce[0] >> 3) * 0x70;
+    const transform = nonceTransforms[deviceType];
+    const nonce = Buffer.alloc(SEED_BYTES_COUNT);
+
+    for (let i = 0; i < SEED_BYTES_COUNT; ++i) {
+        const key = keys[keyOffset + i];
+        nonce[i] = transform(serverNonce[i], i) ^ key;
+    }
+
+    return nonce;
+    /* eslint-enable no-bitwise */
+}
+
+// NOTE: public for testing
+export function generateAuthSeed(
+    deviceType: DeviceType,
+    authKey: Buffer,
+    serverNonce: Buffer,
+) {
+    /* eslint-disable no-bitwise */
+    const transforms = {
+        [DeviceType.PS4](i: number, key: number) {
+            let v = key ^ authKey[i];
+            v += 0x21 + i;
+            return v ^ serverNonce[i];
+        },
+        [DeviceType.PS5](i: number, key: number) {
+            let v = authKey[i];
+            v += 0x18 + i;
+            v ^= serverNonce[i];
+            return v ^ key;
+        },
+    };
+
+    const keys = AUTH_SEED_KEYS[deviceType];
+    const keyOffset = (serverNonce[7] >> 3) * 0x70;
+    const transform = transforms[deviceType];
+    const seed = Buffer.alloc(SEED_BYTES_COUNT);
+
+    for (let i = 0; i < SEED_BYTES_COUNT; ++i) {
+        const key = keys[keyOffset + i];
+        seed[i] = transform(i, key);
+    }
+
+    return seed;
+    /* eslint-enable no-bitwise */
+}
+
 /**
  * Handles crypto for PS5s, and PS4s on RemotePlay 10.0+
  */
@@ -112,5 +179,17 @@ export class ModernCryptoStrategy implements ICryptoStrategy {
             preface: padding,
             codec,
         };
+    }
+
+    public createCodecForAuth(creds: IRemotePlayCredentials, serverNonce: Buffer) {
+        // this is known as "morning" to chiaki for some reason
+        const key = parseHexBytes(creds.registration["RP-Key"]);
+
+        const nonce = transformServerNonceForAuth(this.deviceType, serverNonce);
+        const seed = generateAuthSeed(this.deviceType, key, serverNonce);
+
+        const iv = generateIv(this.version, nonce, this.counter++);
+
+        return new CryptoCodec(iv, seed, CRYPTO_ALGORITHM);
     }
 }

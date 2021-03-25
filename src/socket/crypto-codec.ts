@@ -20,7 +20,7 @@ export class CryptoCodec implements IPacketCodec {
     private pending?: Buffer;
 
     constructor(
-        private readonly initVector: Buffer,
+        public readonly initVector: Buffer,
         public readonly seed: Buffer = randomSeed,
         private readonly algorithm: string = CRYPTO_ALGORITHM,
     ) {

@@ -3,6 +3,7 @@ import got from "got";
 import { IInputOutput } from "../../cli/io";
 
 import { IDiscoveredDevice } from "../../discovery/model";
+import { parseHexBytes } from "../../remoteplay/protocol";
 import { RemotePlayRegistration } from "../../remoteplay/registration";
 import { ICredentialRequester, ICredentials } from "../model";
 import { OauthStrategy } from "./model";
@@ -43,13 +44,9 @@ export function extractAccountId(accountInfo: RawAccountInfo) {
 
 export function registKeyToCredential(registKey: string) {
     // this is so bizarre, but here it is:
-    const buffer = Buffer.alloc(registKey.length / 2);
-    for (let i = 0; i < registKey.length; i += 2) {
-        // 1. Every 2 chars in registKey is interpreted as a hex byte
-        const byteAsString = registKey.slice(i, i + 2);
-        const byte = parseInt(byteAsString, 16);
-        buffer.writeUInt8(byte, i / 2);
-    }
+
+    // 1. Every 2 chars in data is interpreted as a hex byte
+    const buffer = parseHexBytes(registKey);
 
     // 2. The bytes are treated as a utf-8-encoded string
     const asString = buffer.toString("utf-8");
