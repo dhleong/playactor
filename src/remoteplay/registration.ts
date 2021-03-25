@@ -1,5 +1,4 @@
 import _debug from "debug";
-import got from "got";
 
 import {
     DeviceType,
@@ -10,8 +9,16 @@ import { UdpDiscoveryNetworkFactory } from "../discovery/udp";
 import { delayMillis } from "../util/async";
 import { RemotePlayCrypto } from "./crypto";
 import {
-    errorReasonString, RemotePlayVersion, remotePlayVersionFor, remotePlayVersionToString,
+    RemotePlayVersion,
+    remotePlayVersionFor,
+    remotePlayVersionToString,
 } from "./model";
+import {
+    parseBody,
+    request,
+    typedPath,
+    urlWith,
+} from "./protocol";
 
 const debug = _debug("playactor:remoteplay:registration");
 
@@ -88,16 +95,9 @@ export class RemotePlayRegistration {
         const decoded = crypto.decrypt(response);
         debug("result decrypted:", decoded.toString("hex"));
 
-        const message = decoded.toString("utf-8");
-        const registration = message.split("\r\n").reduce((m, line) => {
-            /* eslint-disable no-param-reassign */
-            const [k, v] = line.split(":");
-            m[k] = v.trim();
-            return m;
-            /* eslint-enable no-param-reassign */
-        }, {} as any) as IDeviceRegistration;
-
+        const registration = parseBody<IDeviceRegistration>(decoded);
         debug("registration map:", registration);
+
         return registration;
     }
 
@@ -135,44 +135,23 @@ export class RemotePlayRegistration {
         device: IDiscoveredDevice,
         body: Buffer,
     ) {
-        const result = await got.post(this.urlFor(device), {
+        const response = await request(this.urlFor(device), {
             body,
             headers: {
-                "User-Agent": "remoteplay Windows",
                 "RP-Version": this.versionFor(device),
             },
-            decompress: false,
-            responseType: "buffer",
-            throwHttpErrors: false,
+            method: "POST",
         });
-
-        debug("result headers:", result.headers);
-        debug("result body:", result.body.toString("base64"));
-
-        if (result.statusCode >= 300) {
-            let message = `Registration error: ${result.statusCode}: ${result.statusMessage}`;
-
-            const reasonCode = result.headers["rp-application-reason"];
-            if (reasonCode && !Array.isArray(reasonCode)) {
-                const reason = errorReasonString(reasonCode);
-                if (reason) {
-                    message += `: ${reason}`;
-                }
-            }
-
-            throw new Error(message);
-        }
-
-        return result.body;
+        return response.body;
     }
 
     private urlFor(device: IDiscoveredDevice) {
         const version = remotePlayVersionFor(device);
         const path = version < RemotePlayVersion.PS4_10
             ? "/sce/rp/regist" // PS4 with system version < 8.0
-            : `/sie/${device.type.toLowerCase()}/rp/sess/rgst`;
+            : typedPath(device, "/sie/:type/rp/sess/rgst");
 
-        return `http://${device.address.address}:${REGISTRATION_PORT}${path}`;
+        return urlWith(device, path);
     }
 
     private versionFor(device: IDiscoveredDevice) {
