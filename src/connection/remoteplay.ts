@@ -3,7 +3,8 @@ import _debug from "debug";
 import { IRemotePlayCredentials } from "../credentials/model";
 import { IConnectionConfig } from "../device/model";
 import { DeviceStatus, IDiscoveredDevice } from "../discovery/model";
-import { RemotePlayCommand, RemotePlaySession } from "../remoteplay/session";
+import { RemotePlayCommand } from "../remoteplay/packets";
+import { RemotePlaySession } from "../remoteplay/session";
 import { Waker } from "../waker";
 import { IDeviceConnection } from "./model";
 
