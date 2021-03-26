@@ -4,10 +4,15 @@ import http from "http";
 import { IRemotePlayCredentials } from "../credentials/model";
 import { IConnectionConfig } from "../device/model";
 import { IDiscoveredDevice } from "../discovery/model";
+import { IDeviceSocket } from "../socket/model";
+import { TcpDeviceSocket } from "../socket/tcp";
+import { RemotePlayPacketCodec } from "./codec";
 import { CRYPTO_NONCE_LENGTH, pickCryptoStrategyForDevice } from "./crypto";
-import { ICryptoStrategy } from "./crypto/model";
 import { RemotePlayVersion, remotePlayVersionFor, remotePlayVersionToString } from "./model";
-import { request, typedPath, urlWith } from "./protocol";
+import { RemotePlayCommand, RemotePlayOutgoingPacket } from "./packets";
+import {
+    RemotePlayDeviceProtocol, request, typedPath, urlWith,
+} from "./protocol";
 
 const debug = _debug("playactor:remoteplay:session");
 
@@ -17,104 +22,25 @@ const DID_PREFIX = Buffer.from([
 const DID_SUFFIX = Buffer.from([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
 const OS_TYPE = "Win10.0.0";
 
-export enum RemotePlayCommand {
-    STANDBY = 0x50,
-}
-
 export class RemotePlaySession {
-    private readonly did: Buffer;
-
     constructor(
-        private readonly device: IDiscoveredDevice,
         public readonly config: IConnectionConfig,
-        private readonly crypto: ICryptoStrategy,
-        private readonly creds: IRemotePlayCredentials,
-        private readonly serverNonce: Buffer,
-    ) {
-        this.did = Buffer.concat([
-            DID_PREFIX,
-            Buffer.alloc(16),
-            DID_SUFFIX,
-        ]);
-    }
+        private readonly socket: IDeviceSocket,
+    ) {}
 
     public async sendCommand(command: RemotePlayCommand, payload?: Buffer) {
         debug("TODO: send", command);
 
-        const registKey = this.creds.registration["PS5-RegistKey"]
-            ?? this.creds.registration["PS4-RegistKey"];
-        if (!registKey) {
-            throw new Error("Missing RegistKey?");
-        }
-
-        // TODO: I *think* we actually only send headers *once*, and
-        // then send bodys and read frames like a normal TCP stream
-        const headers = {
-            "RP-Auth": this.encrypt(Buffer.from(registKey)),
-            "RP-Version": this.versionFor(this.device),
-            "RP-Did": this.encrypt(this.did),
-            "RP-ControllerType": "3",
-            "RP-ClientType": "11",
-            "RP-OSType": this.encrypt(Buffer.from(OS_TYPE)),
-            "RP-ConPath": "1",
-        };
-
-        const prelude = Buffer.alloc(8 + (payload?.length ?? 0));
-        prelude.writeInt32LE(payload?.length ?? 0);
-        prelude.writeInt16LE(command, 4);
-        prelude.writeInt16LE(0, 6);
-
-        const body = payload
-            ? Buffer.concat([prelude, this.encryptAsBuffer(payload)])
-            : prelude;
-
-        const agent = new http.Agent({
-            keepAlive: true,
-            timeout: 30_000,
-        });
-
-        const response = await request(this.urlFor(this.device), {
-            agent: {
-                http: agent,
-            },
-            headers,
-        });
-
-        const { socket } = response;
-
-        socket.write(body);
-        socket.on("data", data => {
-            // TODO etc
-            debug("received", data);
-        });
-    }
-
-    private encryptAsBuffer(data: Buffer): Buffer {
-        const codec = this.crypto.createCodecForAuth(this.creds, this.serverNonce);
-        return codec.encode(data);
-    }
-
-    private encrypt(data: Buffer) {
-        return this.encryptAsBuffer(data).toString("base64");
-    }
-
-    private urlFor(device: IDiscoveredDevice) {
-        const version = remotePlayVersionFor(device);
-        const path = version < RemotePlayVersion.PS4_10
-            ? "/sce/rp/session/ctrl" // PS4 with system version < 8.0
-            : typedPath(device, "/sie/:type/rp/sess/ctrl");
-
-        return urlWith(device, path);
-    }
-
-    private versionFor(device: IDiscoveredDevice) {
-        return remotePlayVersionToString(remotePlayVersionFor(device));
+        const packet = new RemotePlayOutgoingPacket(command, payload);
+        await this.socket.send(packet);
     }
 }
 
-export async function openSession(
+/**
+ * Step 1: initialize the session and fetch the "server nonce" value
+ */
+async function initializeSession(
     device: IDiscoveredDevice,
-    config: IConnectionConfig,
     creds: IRemotePlayCredentials,
 ) {
     const version = remotePlayVersionFor(device);
@@ -146,11 +72,101 @@ export async function openSession(
         throw new Error(`Unexpected nonce length: ${nonce.length}`);
     }
 
-    return new RemotePlaySession(
-        device,
-        config,
+    return nonce;
+}
+
+function urlFor(device: IDiscoveredDevice) {
+    const version = remotePlayVersionFor(device);
+    const path = version < RemotePlayVersion.PS4_10
+        ? "/sce/rp/session/ctrl" // PS4 with system version < 8.0
+        : typedPath(device, "/sie/:type/rp/sess/ctrl");
+
+    return urlWith(device, path);
+}
+
+async function openControlSocket(
+    device: IDiscoveredDevice,
+    creds: IRemotePlayCredentials,
+    nonce: Buffer,
+) {
+    const codec = new RemotePlayPacketCodec(
         pickCryptoStrategyForDevice(device),
         creds,
         nonce,
+    );
+
+    const registKey = creds.registration["PS5-RegistKey"]
+        ?? creds.registration["PS4-RegistKey"];
+    if (!registKey) {
+        throw new Error("Missing RegistKey?");
+    }
+
+    // "device ID"?
+    const did = Buffer.concat([
+        DID_PREFIX,
+        Buffer.alloc(16),
+        DID_SUFFIX,
+    ]);
+
+    function encrypt(data: Buffer) {
+        return codec.encodeBuffer(data).toString("base64");
+    }
+
+    // TODO: I *think* we actually only send headers *once*, and
+    // then send bodys and read frames like a normal TCP stream
+    const headers = {
+        "RP-Auth": encrypt(Buffer.from(registKey)),
+        "RP-Version": remotePlayVersionToString(remotePlayVersionFor(device)),
+        "RP-Did": encrypt(did),
+        "RP-ControllerType": "3",
+        "RP-ClientType": "11",
+        "RP-OSType": encrypt(Buffer.from(OS_TYPE)),
+        "RP-ConPath": "1",
+    };
+
+    const agent = new http.Agent({
+        keepAlive: true,
+        timeout: 30_000,
+    });
+
+    const response = await request(urlFor(device), {
+        agent: {
+            http: agent,
+        },
+        headers,
+    });
+
+    function decrypt(map: http.IncomingHttpHeaders, name: string) {
+        const value = map[name];
+        if (typeof value !== "string") {
+            throw new Error(`Missing required response header ${name}`);
+        }
+
+        return codec.decodeBuffer(Buffer.from(value, "base64"));
+    }
+
+    const serverType = decrypt(response.headers, "rp-server-type");
+    debug("received server type=", serverType);
+
+    const { socket } = response;
+
+    const deviceSocket = new TcpDeviceSocket(device, RemotePlayDeviceProtocol, socket);
+    deviceSocket.setCodec(codec);
+    return deviceSocket;
+}
+
+export async function openSession(
+    device: IDiscoveredDevice,
+    config: IConnectionConfig,
+    creds: IRemotePlayCredentials,
+) {
+    const nonce = await initializeSession(device, creds);
+    const socket = await openControlSocket(device, creds, nonce);
+
+    debug("TODO: login via", config);
+
+    return new RemotePlaySession(
+        config,
+        socket,
     );
 }

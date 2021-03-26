@@ -2,7 +2,12 @@ import _debug from "debug";
 import got, { Options, OptionsOfBufferResponseBody } from "got";
 
 import { IDiscoveredDevice } from "../discovery/model";
+import {
+    IDeviceProtocol, IPacket, IPacketReader, PacketReadState,
+} from "../socket/model";
+import { LengthDelimitedBufferReader } from "../socket/protocol/base";
 import { errorReasonString } from "./model";
+import { RemotePlayIncomingPacket } from "./packets";
 
 const debug = _debug("playactor:remoteplay:protocol");
 
@@ -74,3 +79,31 @@ export function typedPath(device: IDiscoveredDevice, path: string) {
 export function urlWith(device: IDiscoveredDevice, path: string) {
     return `http://${device.address.address}:${REST_PORT}${path}`;
 }
+
+const PACKET_TYPE_OFFSET = 4;
+
+export class RemotePlayPacketReader implements IPacketReader {
+    private readonly lengthDelimiter = new LengthDelimitedBufferReader(8);
+
+    public read(data: Buffer, paddingSize?: number): PacketReadState {
+        return this.lengthDelimiter.read(data, paddingSize);
+    }
+
+    public get(): IPacket {
+        const buf = this.lengthDelimiter.get();
+        const type = buf.readInt16LE(PACKET_TYPE_OFFSET);
+        return new RemotePlayIncomingPacket(type, buf);
+    }
+
+    public remainder(): Buffer | undefined {
+        return this.lengthDelimiter.remainder();
+    }
+}
+
+export const RemotePlayDeviceProtocol: IDeviceProtocol = {
+    version: { major: 10, minor: 0 },
+
+    createPacketReader(): IPacketReader {
+        throw new Error("Method not implemented.");
+    },
+};

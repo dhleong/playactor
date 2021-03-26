@@ -2,7 +2,7 @@ import _debug from "debug";
 
 import { PacketReadState } from "../model";
 
-const minPacketLength = 4;
+const DEFAULT_MIN_PACKET_LENGTH = 4;
 
 const debug = _debug("playactor:socket:length");
 
@@ -11,6 +11,10 @@ export class LengthDelimitedBufferReader {
     private actualLength?: number;
     private expectedLength?: number;
 
+    constructor(
+        private readonly minPacketLength: number = DEFAULT_MIN_PACKET_LENGTH,
+    ) {}
+
     public read(data: Buffer, paddingSize?: number): PacketReadState {
         if (this.currentBuffer) {
             this.currentBuffer = Buffer.concat([this.currentBuffer, data]);
@@ -18,7 +22,7 @@ export class LengthDelimitedBufferReader {
             this.currentBuffer = data;
         }
 
-        if (this.currentBuffer.length < minPacketLength) {
+        if (this.currentBuffer.length < this.minPacketLength) {
             return PacketReadState.PENDING;
         }
 

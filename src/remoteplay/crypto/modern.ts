@@ -146,8 +146,6 @@ export function generateAuthSeed(
  * Handles crypto for PS5s, and PS4s on RemotePlay 10.0+
  */
 export class ModernCryptoStrategy implements ICryptoStrategy {
-    private counter = 0;
-
     constructor(
         private readonly deviceType: DeviceType,
         private readonly version: RemotePlayVersion,
@@ -164,7 +162,7 @@ export class ModernCryptoStrategy implements ICryptoStrategy {
         const initKeyOff = padding[0x18D] & 0x1F;
         /* eslint-enable no-bitwise */
 
-        const iv = generateIv(this.version, nonce, this.counter);
+        const iv = generateIv(this.version, nonce, /* counter = */0);
         const seed = generateSeed(this.deviceType, pinNumber, initKeyOff);
         const aeropause = generateAeropause(this.deviceType, nonce, padding);
 
@@ -181,14 +179,18 @@ export class ModernCryptoStrategy implements ICryptoStrategy {
         };
     }
 
-    public createCodecForAuth(creds: IRemotePlayCredentials, serverNonce: Buffer) {
+    public createCodecForAuth(
+        creds: IRemotePlayCredentials,
+        serverNonce: Buffer,
+        counter: number,
+    ) {
         // this is known as "morning" to chiaki for some reason
         const key = parseHexBytes(creds.registration["RP-Key"]);
 
         const nonce = transformServerNonceForAuth(this.deviceType, serverNonce);
         const seed = generateAuthSeed(this.deviceType, key, serverNonce);
 
-        const iv = generateIv(this.version, nonce, this.counter++);
+        const iv = generateIv(this.version, nonce, counter);
 
         return new CryptoCodec(iv, seed, CRYPTO_ALGORITHM);
     }

@@ -43,8 +43,6 @@ function aeropause(padding: Buffer, offset: number, nonce: Buffer) {
 }
 
 export class LegacyCryptoStrategy implements ICryptoStrategy {
-    private counter = 0;
-
     constructor(
         private readonly version: RemotePlayVersion,
     ) {}
@@ -58,7 +56,7 @@ export class LegacyCryptoStrategy implements ICryptoStrategy {
         const AEROPAUSE_DESTINATION = 0x11c;
         aeropause(padding, AEROPAUSE_DESTINATION, nonce);
 
-        const iv = generateIv(this.version, nonce, this.counter);
+        const iv = generateIv(this.version, nonce, /* counter= */0);
         const seed = generateSeed(pinNumber);
         const codec = new CryptoCodec(iv, seed);
         return {
@@ -70,6 +68,7 @@ export class LegacyCryptoStrategy implements ICryptoStrategy {
     public createCodecForAuth(
         creds: IRemotePlayCredentials,
         serverNonce: Buffer,
+        counter: number,
     ): CryptoCodec {
         const key = parseHexBytes(creds.registration["RP-Key"]);
 
@@ -82,7 +81,7 @@ export class LegacyCryptoStrategy implements ICryptoStrategy {
         );
         /* eslint-enable no-bitwise */
 
-        const iv = generateIv(this.version, nonce, this.counter++);
+        const iv = generateIv(this.version, nonce, counter);
         return new CryptoCodec(iv, seed);
     }
 }
