@@ -17,7 +17,7 @@ function generateNonce() {
     return nonce;
 }
 
-function pickStrategyForDevice(device: IDiscoveredDevice) {
+export function pickCryptoStrategyForDevice(device: IDiscoveredDevice) {
     const version = remotePlayVersionFor(device);
     const strategy = version < RemotePlayVersion.PS4_10
         ? new LegacyCryptoStrategy(version)
@@ -33,7 +33,7 @@ export class RemotePlayCrypto {
         pin: string,
         nonce: Buffer = generateNonce(),
     ) {
-        const strategy = pickStrategyForDevice(device);
+        const strategy = pickCryptoStrategyForDevice(device);
         const { codec, preface } = strategy.createCodecForPin(pin, nonce);
 
         return new RemotePlayCrypto(codec, preface, nonce);
