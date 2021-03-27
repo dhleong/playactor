@@ -87,8 +87,8 @@ export class RemotePlayRegistration {
         debug("registration map:", registration);
 
         const rpKey = registration["RP-Key"];
-        if (!rpKey || rpKey.length !== CRYPTO_NONCE_LENGTH) {
-            throw new Error("Received invalid key from registration");
+        if (!rpKey || rpKey.length !== 2 * CRYPTO_NONCE_LENGTH) {
+            throw new Error(`Received invalid key from registration (value: ${rpKey})`);
         }
 
         return registration;

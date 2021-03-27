@@ -14,6 +14,8 @@ export class CryptoCodec implements IPacketCodec {
     public readonly paddingSize = 16;
 
     private readonly padEncoding: boolean;
+    private readonly chunkDecoding: boolean;
+
     private readonly cipher: crypto.Cipher;
     private readonly decipher: crypto.Decipher;
 
@@ -40,6 +42,7 @@ export class CryptoCodec implements IPacketCodec {
         if (!this.padEncoding) {
             this.cipher.setAutoPadding(false);
         }
+        this.chunkDecoding = this.padEncoding;
     }
 
     public encode(packet: Buffer): Buffer {
@@ -61,14 +64,16 @@ export class CryptoCodec implements IPacketCodec {
         const p = pending ? Buffer.concat([pending, packet]) : packet;
         this.pending = undefined;
 
-        // decipher in 16-byte chunks
-        if (p.length < 16) {
+        // decipher in 16-byte chunks (if chunkDecoding is true)
+        if (this.chunkDecoding && p.length < 16) {
             debug("wait for 16-byte chunk");
             this.pending = p;
             return Buffer.from([]);
         }
 
-        const availableBytes = Math.floor(p.length / 16) * 16;
+        const availableBytes = this.chunkDecoding
+            ? Math.floor(p.length / 16) * 16
+            : p.length;
         if (availableBytes === 0) {
             return Buffer.from([]);
         }

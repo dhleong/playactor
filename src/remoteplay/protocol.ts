@@ -40,7 +40,9 @@ export function parseBody<R>(body: Buffer): R {
     return message.split("\r\n").reduce((m, line) => {
         /* eslint-disable no-param-reassign */
         const [k, v] = line.split(":");
-        m[k] = v.trim();
+        if (v) {
+            m[k] = v.trim();
+        }
         return m;
         /* eslint-enable no-param-reassign */
     }, {} as any) as R;
@@ -54,15 +56,20 @@ export async function request(url: string, options: Options) {
         debug(withoutAgent);
     }
 
-    // NOTE: We *must* specify Content-Length: 0 for GET requests,
-    // or else get a 403 response for some reason
+    const headers: Record<string, string | string[]> = {
+        "User-Agent": "remoteplay Windows",
+        ...options.headers,
+    };
+    if (!headers["Content-Length"] && !options.method) {
+        // NOTE: We *must* specify Content-Length: 0 for GET requests,
+        // or else get a 403 response for some reason
+        headers["Content-Length"] = "0";
+    }
+    debug("combined request headers:", headers);
+
     const result = await got(url, {
         ...options,
-        headers: {
-            "User-Agent": "remoteplay Windows",
-            "Content-Length": options.method ? undefined : "0",
-            ...options.headers,
-        },
+        headers,
         decompress: false,
         responseType: "buffer",
         throwHttpErrors: false,
