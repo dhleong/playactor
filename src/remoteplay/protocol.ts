@@ -13,6 +13,17 @@ const debug = _debug("playactor:remoteplay:protocol");
 
 export const REST_PORT = 9295;
 
+export function padBuffer(buffer: Buffer, expectedBytes: number) {
+    if (buffer.length > expectedBytes) {
+        throw new Error(`Expected ${expectedBytes} but buffer was ${buffer.length}`);
+    }
+
+    return Buffer.concat([
+        buffer,
+        Buffer.alloc(expectedBytes - buffer.length, 0),
+    ]);
+}
+
 export function parseHexBytes(data: string) {
     const buffer = Buffer.alloc(data.length / 2);
     for (let i = 0; i < data.length; i += 2) {

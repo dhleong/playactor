@@ -3,7 +3,7 @@ import { IRemotePlayCredentials } from "../../credentials/model";
 import { CryptoCodec } from "../../socket/crypto-codec";
 
 import { RemotePlayVersion } from "../model";
-import { parseHexBytes } from "../protocol";
+import { padBuffer, parseHexBytes } from "../protocol";
 import { ICryptoStrategy } from "./model";
 import { generateIv } from "./modern";
 
@@ -71,7 +71,7 @@ export class LegacyCryptoStrategy implements ICryptoStrategy {
         serverNonce: Buffer,
         counter: bigint,
     ): CryptoCodec {
-        const key = parseHexBytes(creds.registration["RP-Key"]);
+        const key = padBuffer(parseHexBytes(creds.registration["RP-Key"]), KEY_SIZE);
 
         /* eslint-disable no-bitwise */
         const nonce = Buffer.from(
