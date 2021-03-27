@@ -11,6 +11,7 @@ import { CRYPTO_NONCE_LENGTH, pickCryptoStrategyForDevice } from "./crypto";
 import { RemotePlayVersion, remotePlayVersionFor, remotePlayVersionToString } from "./model";
 import { RemotePlayCommand, RemotePlayOutgoingPacket } from "./packets";
 import {
+    parseHexBytes,
     RemotePlayDeviceProtocol, request, typedPath, urlWith,
 } from "./protocol";
 
@@ -115,7 +116,7 @@ async function openControlSocket(
 
     const version = remotePlayVersionFor(device);
     const headers: Record<string, string> = {
-        "RP-Auth": encrypt(Buffer.from(registKey, "base64")),
+        "RP-Auth": encrypt(parseHexBytes(registKey)),
         "RP-Version": remotePlayVersionToString(version),
         "RP-Did": encrypt(did),
         "RP-ControllerType": "3",
