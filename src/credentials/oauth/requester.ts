@@ -64,34 +64,6 @@ export class OauthCredentialRequester implements ICredentialRequester {
         private strategy: OauthStrategy,
     ) {}
 
-    public async performOauth() {
-        const redirected = await this.strategy.performLogin(LOGIN_URL);
-
-        const url = new URL(redirected);
-        const code = url.searchParams.get("code");
-        if (!code) {
-            throw new Error("Did not get OAuth Code");
-        }
-
-        const accessToken = await this.exchangeCodeForAccess(code);
-        debug(`Fetched access token (${accessToken}); requesting account info`);
-
-        const accountInfo: RawAccountInfo = await got(`${TOKEN_URL}/${accessToken}`, {
-            username: CLIENT_ID,
-            password: CLIENT_SECRET,
-        }).json();
-
-        return extractAccountId(accountInfo);
-    }
-
-    public async registerWithDevice(device: IDiscoveredDevice, accountId: string, pin: string) {
-        const registration = new RemotePlayRegistration();
-        return registration.register(device, {
-            accountId,
-            pin,
-        });
-    }
-
     public async requestForDevice(device: IDiscoveredDevice): Promise<ICredentials> {
         const accountId = await this.performOauth();
 
@@ -118,6 +90,34 @@ export class OauthCredentialRequester implements ICredentialRequester {
             accountId,
             registration,
         };
+    }
+
+    private async performOauth() {
+        const redirected = await this.strategy.performLogin(LOGIN_URL);
+
+        const url = new URL(redirected);
+        const code = url.searchParams.get("code");
+        if (!code) {
+            throw new Error("Did not get OAuth Code");
+        }
+
+        const accessToken = await this.exchangeCodeForAccess(code);
+        debug(`Fetched access token (${accessToken}); requesting account info`);
+
+        const accountInfo: RawAccountInfo = await got(`${TOKEN_URL}/${accessToken}`, {
+            username: CLIENT_ID,
+            password: CLIENT_SECRET,
+        }).json();
+
+        return extractAccountId(accountInfo);
+    }
+
+    private async registerWithDevice(device: IDiscoveredDevice, accountId: string, pin: string) {
+        const registration = new RemotePlayRegistration();
+        return registration.register(device, {
+            accountId,
+            pin,
+        });
     }
 
     private async exchangeCodeForAccess(code: string) {

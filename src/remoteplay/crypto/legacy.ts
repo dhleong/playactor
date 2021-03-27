@@ -1,16 +1,7 @@
-import crypto from "crypto";
-import { IRemotePlayCredentials } from "../../credentials/model";
-import { CryptoCodec } from "../../socket/crypto-codec";
-
-import { RemotePlayVersion } from "../model";
-import { padBuffer, parseHexBytes } from "../protocol";
-import { ICryptoStrategy } from "./model";
-import { generateIv } from "./modern";
+import { BaseCryptoStrategy } from "./base";
 
 const KEY_SIZE = 16;
-const PADDING_BYTES = 480;
 const AES_KEY = "3f1cc4b6dcbb3ecc50baedef9734c7c9";
-const CRYPTO_ALGORITHM = "aes-128-cfb";
 
 function generateSeed(pin: number) {
     /* eslint-disable no-bitwise */
@@ -43,46 +34,27 @@ function aeropause(padding: Buffer, offset: number, nonce: Buffer) {
     /* eslint-enable no-bitwise, no-param-reassign */
 }
 
-export class LegacyCryptoStrategy implements ICryptoStrategy {
-    constructor(
-        private readonly version: RemotePlayVersion,
-    ) {}
+export class LegacyCryptoStrategy extends BaseCryptoStrategy {
+    protected generatePinSeed(_padding: Buffer, pinNumber: number): Buffer {
+        return generateSeed(pinNumber);
+    }
 
-    public createCodecForPin(pin: string, nonce: Buffer) {
-        const pinNumber = parseInt(pin, 10);
-
-        const padding = Buffer.alloc(PADDING_BYTES);
-        crypto.randomFillSync(padding);
-
+    protected signPadding(nonce: Buffer, padding: Buffer) {
         const AEROPAUSE_DESTINATION = 0x11c;
         aeropause(padding, AEROPAUSE_DESTINATION, nonce);
-
-        const iv = generateIv(this.version, nonce, /* counter= */BigInt(0));
-        const seed = generateSeed(pinNumber);
-        const codec = new CryptoCodec(iv, seed, CRYPTO_ALGORITHM);
-        return {
-            codec,
-            preface: padding,
-        };
     }
 
-    public createCodecForAuth(
-        creds: IRemotePlayCredentials,
-        serverNonce: Buffer,
-        counter: bigint,
-    ): CryptoCodec {
-        const key = padBuffer(parseHexBytes(creds.registration["RP-Key"]));
-
-        /* eslint-disable no-bitwise */
-        const nonce = Buffer.from(
-            serverNonce.map((nonceValue, i) => (nonceValue - i - 0x27) ^ ECHO_A[i]).buffer,
-        );
-        const seed = Buffer.from(
+    /* eslint-disable no-bitwise */
+    protected generateAuthSeed(key: Buffer, serverNonce: Buffer) {
+        return Buffer.from(
             key.map((keyValue, i) => ((keyValue - i + 0x34) ^ ECHO_B[i]) ^ serverNonce[i]).buffer,
         );
-        /* eslint-enable no-bitwise */
-
-        const iv = generateIv(this.version, nonce, counter);
-        return new CryptoCodec(iv, seed, CRYPTO_ALGORITHM);
     }
+
+    protected transformServerNonceForAuth(serverNonce: Buffer): Buffer {
+        return Buffer.from(
+            serverNonce.map((nonceValue, i) => (nonceValue - i - 0x27) ^ ECHO_A[i]).buffer,
+        );
+    }
+    /* eslint-enable no-bitwise */
 }
