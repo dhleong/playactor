@@ -176,7 +176,13 @@ export async function openSession(
     const socket = await openControlSocket(device, creds, nonce);
 
     debug("TODO: login via", config);
+    await socket.send(new RemotePlayOutgoingPacket(RemotePlayCommand.LOGIN));
+    for await (const packet of socket.receive()) {
+        debug("GOT: ", packet);
+        break;
+    }
 
+    debug("RemotePlaySession ready!");
     return new RemotePlaySession(
         config,
         socket,

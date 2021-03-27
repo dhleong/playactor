@@ -1,10 +1,13 @@
 import crypto from "crypto";
+import _debug from "debug";
 
 import { IRemotePlayCredentials } from "../../credentials/model";
 import { CryptoCodec } from "../../socket/crypto-codec";
 import { RemotePlayVersion } from "../model";
 import { CRYPTO_NONCE_LENGTH, parseHexBytes } from "../protocol";
 import { ICryptoStrategy } from "./model";
+
+const debug = _debug("playactor:remoteplay:crypto:base");
 
 const CRYPTO_ALGORITHM = "aes-128-cfb";
 const PADDING_BYTES = 480;
@@ -66,6 +69,8 @@ export abstract class BaseCryptoStrategy implements ICryptoStrategy {
         // this is known as "morning" to chiaki for some reason
         const key = parseHexBytes(creds.registration["RP-Key"]);
         if (key.length !== CRYPTO_NONCE_LENGTH) {
+            debug("got RP-Key", key);
+            debug("   length:", key.length);
             throw new Error("Invalid RP Key; try deleting credentials and performing auth again");
         }
 

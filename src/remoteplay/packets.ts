@@ -2,6 +2,7 @@ import { IPacket } from "../socket/model";
 
 export enum RemotePlayCommand {
     STANDBY = 0x50,
+    LOGIN = 0x05,
 }
 
 export class RemotePlayIncomingPacket implements IPacket {
