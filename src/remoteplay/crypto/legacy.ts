@@ -71,7 +71,7 @@ export class LegacyCryptoStrategy implements ICryptoStrategy {
         serverNonce: Buffer,
         counter: bigint,
     ): CryptoCodec {
-        const key = padBuffer(parseHexBytes(creds.registration["RP-Key"]), KEY_SIZE);
+        const key = padBuffer(parseHexBytes(creds.registration["RP-Key"]));
 
         /* eslint-disable no-bitwise */
         const nonce = Buffer.from(

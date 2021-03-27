@@ -4,7 +4,7 @@ import { DeviceType } from "../../discovery/model";
 import { CryptoCodec } from "../../socket/crypto-codec";
 
 import { RemotePlayVersion } from "../model";
-import { parseHexBytes } from "../protocol";
+import { padBuffer, parseHexBytes } from "../protocol";
 import {
     AERO_KEYS,
     AUTH_NONCE_KEYS,
@@ -156,7 +156,6 @@ export class ModernCryptoStrategy implements ICryptoStrategy {
         const pinNumber = parseInt(pin, 10);
 
         const padding = Buffer.alloc(PADDING_BYTES).fill("A");
-        // crypto.randomFillSync(padding);
 
         /* eslint-disable no-bitwise */
         const initKeyOff = padding[0x18D] & 0x1F;
@@ -185,7 +184,7 @@ export class ModernCryptoStrategy implements ICryptoStrategy {
         counter: bigint,
     ) {
         // this is known as "morning" to chiaki for some reason
-        const key = parseHexBytes(creds.registration["RP-Key"]);
+        const key = padBuffer(parseHexBytes(creds.registration["RP-Key"]));
 
         const nonce = transformServerNonceForAuth(this.deviceType, serverNonce);
         const seed = generateAuthSeed(this.deviceType, key, serverNonce);
