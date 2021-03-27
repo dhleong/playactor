@@ -10,6 +10,6 @@ export interface ICryptoStrategy {
     createCodecForAuth(
         creds: IRemotePlayCredentials,
         serverNonce: Buffer,
-        counter: number,
+        counter: bigint,
     ): CryptoCodec;
 }

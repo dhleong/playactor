@@ -10,6 +10,7 @@ import { generateIv } from "./modern";
 const KEY_SIZE = 16;
 const PADDING_BYTES = 480;
 const AES_KEY = "3f1cc4b6dcbb3ecc50baedef9734c7c9";
+const CRYPTO_ALGORITHM = "aes-128-cfb";
 
 function generateSeed(pin: number) {
     /* eslint-disable no-bitwise */
@@ -56,9 +57,9 @@ export class LegacyCryptoStrategy implements ICryptoStrategy {
         const AEROPAUSE_DESTINATION = 0x11c;
         aeropause(padding, AEROPAUSE_DESTINATION, nonce);
 
-        const iv = generateIv(this.version, nonce, /* counter= */0);
+        const iv = generateIv(this.version, nonce, /* counter= */BigInt(0));
         const seed = generateSeed(pinNumber);
-        const codec = new CryptoCodec(iv, seed);
+        const codec = new CryptoCodec(iv, seed, CRYPTO_ALGORITHM);
         return {
             codec,
             preface: padding,
@@ -68,7 +69,7 @@ export class LegacyCryptoStrategy implements ICryptoStrategy {
     public createCodecForAuth(
         creds: IRemotePlayCredentials,
         serverNonce: Buffer,
-        counter: number,
+        counter: bigint,
     ): CryptoCodec {
         const key = parseHexBytes(creds.registration["RP-Key"]);
 
@@ -82,6 +83,6 @@ export class LegacyCryptoStrategy implements ICryptoStrategy {
         /* eslint-enable no-bitwise */
 
         const iv = generateIv(this.version, nonce, counter);
-        return new CryptoCodec(iv, seed);
+        return new CryptoCodec(iv, seed, CRYPTO_ALGORITHM);
     }
 }

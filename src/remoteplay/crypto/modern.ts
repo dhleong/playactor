@@ -25,9 +25,9 @@ const hmacKeys = {
 };
 
 // NOTE: public for testing
-export function generateIv(version: RemotePlayVersion, nonce: Buffer, counter: number) {
+export function generateIv(version: RemotePlayVersion, nonce: Buffer, counter: bigint) {
     const counterBuffer = Buffer.alloc(8, "binary");
-    counterBuffer.writeBigUInt64LE(BigInt(counter));
+    counterBuffer.writeBigUInt64BE(counter);
 
     const hmacKey = hmacKeys[version];
     const hmac = crypto.createHmac("sha256", Buffer.from(hmacKey, "hex"));
@@ -162,7 +162,7 @@ export class ModernCryptoStrategy implements ICryptoStrategy {
         const initKeyOff = padding[0x18D] & 0x1F;
         /* eslint-enable no-bitwise */
 
-        const iv = generateIv(this.version, nonce, /* counter = */0);
+        const iv = generateIv(this.version, nonce, /* counter = */BigInt(0));
         const seed = generateSeed(this.deviceType, pinNumber, initKeyOff);
         const aeropause = generateAeropause(this.deviceType, nonce, padding);
 
@@ -182,7 +182,7 @@ export class ModernCryptoStrategy implements ICryptoStrategy {
     public createCodecForAuth(
         creds: IRemotePlayCredentials,
         serverNonce: Buffer,
-        counter: number,
+        counter: bigint,
     ) {
         // this is known as "morning" to chiaki for some reason
         const key = parseHexBytes(creds.registration["RP-Key"]);

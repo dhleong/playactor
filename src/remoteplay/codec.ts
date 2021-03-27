@@ -5,8 +5,8 @@ import { ICryptoStrategy } from "./crypto/model";
 const HEADER_SIZE = 8;
 
 export class RemotePlayPacketCodec implements IPacketCodec {
-    private encryptCounter = 0;
-    private decryptCounter = 0;
+    private encryptCounter = BigInt(0);
+    private decryptCounter = BigInt(0);
 
     constructor(
         private readonly crypto: ICryptoStrategy,
