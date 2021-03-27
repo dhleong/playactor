@@ -35,8 +35,12 @@ export function parseBody<R>(body: Buffer): R {
 }
 
 export async function request(url: string, options: Options) {
-    debug("performing ", options.method ?? "GET", url);
-    debug(options);
+    if (debug.enabled) {
+        debug("performing ", options.method ?? "GET", url);
+        const withoutAgent = { ...options };
+        delete withoutAgent.agent;
+        debug(withoutAgent);
+    }
 
     // NOTE: We *must* specify Content-Length: 0 for GET requests,
     // or else get a 403 response for some reason

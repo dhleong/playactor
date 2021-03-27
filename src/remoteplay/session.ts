@@ -101,7 +101,8 @@ async function openControlSocket(
         throw new Error("Missing RegistKey?");
     }
 
-    // "device ID"?
+    // "device ID"? Seems to just be random bytes with some
+    // prefix and suffix
     const did = Buffer.concat([
         DID_PREFIX,
         Buffer.alloc(16),
@@ -112,23 +113,31 @@ async function openControlSocket(
         return codec.encodeBuffer(data).toString("base64");
     }
 
-    // TODO: I *think* we actually only send headers *once*, and
-    // then send bodys and read frames like a normal TCP stream
-    const headers = {
-        "RP-Auth": encrypt(Buffer.from(registKey)),
-        "RP-Version": remotePlayVersionToString(remotePlayVersionFor(device)),
+    const version = remotePlayVersionFor(device);
+    const headers: Record<string, string> = {
+        "RP-Auth": encrypt(Buffer.from(registKey, "base64")),
+        "RP-Version": remotePlayVersionToString(version),
         "RP-Did": encrypt(did),
         "RP-ControllerType": "3",
         "RP-ClientType": "11",
-        "RP-OSType": encrypt(Buffer.from(OS_TYPE)),
+        "RP-OSType": encrypt(Buffer.from(OS_TYPE, "utf-8")),
         "RP-ConPath": "1",
     };
+
+    if (version >= RemotePlayVersion.PS4_10) {
+        headers["RP-StartBitrate"] = encrypt(Buffer.alloc(4, 0));
+
+        const typeBuffer = Buffer.alloc(4, 0);
+        typeBuffer.writeInt32LE(1);
+        headers["RP-StreamingType"] = encrypt(typeBuffer);
+    }
 
     const agent = new http.Agent({
         keepAlive: true,
         timeout: 30_000,
     });
 
+    debug("sending session control request...");
     const response = await request(urlFor(device), {
         agent: {
             http: agent,
