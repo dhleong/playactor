@@ -12,8 +12,9 @@ import { RemotePlayIncomingPacket } from "./packets";
 const debug = _debug("playactor:remoteplay:protocol");
 
 export const REST_PORT = 9295;
+export const CRYPTO_NONCE_LENGTH = 16;
 
-export function padBuffer(buffer: Buffer, expectedBytes: number) {
+export function padBuffer(buffer: Buffer, expectedBytes: number = CRYPTO_NONCE_LENGTH) {
     if (buffer.length > expectedBytes) {
         throw new Error(`Expected ${expectedBytes} but buffer was ${buffer.length}`);
     }

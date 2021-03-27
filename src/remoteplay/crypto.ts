@@ -6,10 +6,9 @@ import { CryptoCodec } from "../socket/crypto-codec";
 import { LegacyCryptoStrategy } from "./crypto/legacy";
 import { ModernCryptoStrategy } from "./crypto/modern";
 import { RemotePlayVersion, remotePlayVersionFor } from "./model";
+import { CRYPTO_NONCE_LENGTH } from "./protocol";
 
 const debug = _debug("playactor:remoteplay:crypto");
-
-export const CRYPTO_NONCE_LENGTH = 16;
 
 function generateNonce() {
     const nonce = Buffer.alloc(CRYPTO_NONCE_LENGTH);

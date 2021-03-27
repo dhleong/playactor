@@ -7,10 +7,11 @@ import { IDiscoveredDevice } from "../discovery/model";
 import { IDeviceSocket } from "../socket/model";
 import { TcpDeviceSocket } from "../socket/tcp";
 import { RemotePlayPacketCodec } from "./codec";
-import { CRYPTO_NONCE_LENGTH, pickCryptoStrategyForDevice } from "./crypto";
+import { pickCryptoStrategyForDevice } from "./crypto";
 import { RemotePlayVersion, remotePlayVersionFor, remotePlayVersionToString } from "./model";
 import { RemotePlayCommand, RemotePlayOutgoingPacket } from "./packets";
 import {
+    CRYPTO_NONCE_LENGTH,
     padBuffer,
     parseHexBytes,
     RemotePlayDeviceProtocol, request, typedPath, urlWith,

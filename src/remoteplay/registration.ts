@@ -15,6 +15,7 @@ import {
     remotePlayVersionToString,
 } from "./model";
 import {
+    CRYPTO_NONCE_LENGTH,
     parseBody,
     request,
     typedPath,
@@ -84,6 +85,11 @@ export class RemotePlayRegistration {
 
         const registration = parseBody<IDeviceRegistration>(decoded);
         debug("registration map:", registration);
+
+        const rpKey = registration["RP-Key"];
+        if (!rpKey || rpKey.length !== CRYPTO_NONCE_LENGTH) {
+            throw new Error("Received invalid key from registration");
+        }
 
         return registration;
     }
