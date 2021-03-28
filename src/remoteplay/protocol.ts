@@ -106,7 +106,11 @@ export function urlWith(device: IDiscoveredDevice, path: string) {
 const PACKET_TYPE_OFFSET = 4;
 
 export class RemotePlayPacketReader implements IPacketReader {
-    private readonly lengthDelimiter = new LengthDelimitedBufferReader(8);
+    private readonly lengthDelimiter = new LengthDelimitedBufferReader({
+        minPacketLength: 8,
+        lengthIncludesHeader: false,
+        littleEndian: false,
+    });
 
     public read(data: Buffer, paddingSize?: number): PacketReadState {
         return this.lengthDelimiter.read(data, paddingSize);
@@ -114,7 +118,8 @@ export class RemotePlayPacketReader implements IPacketReader {
 
     public get(): IPacket {
         const buf = this.lengthDelimiter.get();
-        const type = buf.readInt16LE(PACKET_TYPE_OFFSET);
+        debug("got=", buf);
+        const type = buf.readInt16BE(PACKET_TYPE_OFFSET);
         return new RemotePlayIncomingPacket(type, buf);
     }
 
@@ -127,6 +132,6 @@ export const RemotePlayDeviceProtocol: IDeviceProtocol = {
     version: { major: 10, minor: 0 },
 
     createPacketReader(): IPacketReader {
-        throw new Error("Method not implemented.");
+        return new RemotePlayPacketReader();
     },
 };

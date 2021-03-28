@@ -23,10 +23,19 @@ const protocolsByVersion = {
 
 const debug = _debug("playactor:socket:tcp");
 
+export interface IOptions {
+    refSocket: boolean;
+}
+
+const defaultOptions: IOptions = {
+    refSocket: false,
+};
+
 export class TcpDeviceSocket implements IDeviceSocket {
     public static connectTo(
         device: IDiscoveredDevice,
         config: ISocketConfig,
+        options: IOptions = defaultOptions,
     ) {
         const port = device.hostRequestPort;
         if (!port) {
@@ -47,7 +56,7 @@ export class TcpDeviceSocket implements IDeviceSocket {
             socket.once("connect", () => {
                 debug("socket connected!");
                 socket.removeAllListeners("error");
-                resolve(new TcpDeviceSocket(device, protocol, socket));
+                resolve(new TcpDeviceSocket(device, protocol, socket, options));
             });
             socket.once("error", err => {
                 debug("error on socket:", err);
@@ -67,6 +76,7 @@ export class TcpDeviceSocket implements IDeviceSocket {
         public readonly device: IDiscoveredDevice,
         private readonly protocol: IDeviceProtocol,
         private readonly stream: net.Socket,
+        private readonly options: IOptions,
         public readonly openedTimestamp: number = Date.now(),
     ) {
         this.processor = new BufferPacketProcessor(
@@ -74,6 +84,10 @@ export class TcpDeviceSocket implements IDeviceSocket {
             this.codec,
             packet => this.onPacketReceived(packet),
         );
+
+        if (this.options.refSocket) {
+            stream.ref();
+        }
 
         stream.on("end", () => this.handleEnd());
         stream.on("error", err => this.handleEnd(err));
@@ -105,6 +119,7 @@ export class TcpDeviceSocket implements IDeviceSocket {
         };
 
         this.receivers.push(receiver);
+        debug("registered receiver @", this.stream);
         return receiver;
     }
 
@@ -140,10 +155,16 @@ export class TcpDeviceSocket implements IDeviceSocket {
     }
 
     public async close() {
+        debug("close()");
+
         const extraLife = this.stayAliveUntil - Date.now();
         if (extraLife > 0) {
             debug("waiting", extraLife, "millis before closing");
             await delayMillis(extraLife);
+        }
+
+        if (this.options.refSocket) {
+            this.stream.unref();
         }
 
         const politeDisconnect = this.protocol.requestDisconnect;

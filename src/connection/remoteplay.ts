@@ -11,8 +11,6 @@ import { IDeviceConnection } from "./model";
 const debug = _debug("playactor:connection:remoteplay");
 
 export class RemotePlayDeviceConnection implements IDeviceConnection {
-    private isClosed = false;
-
     constructor(
         // FIXME most of these are only public to avoid typescript whining
         public readonly waker: Waker,
@@ -24,11 +22,11 @@ export class RemotePlayDeviceConnection implements IDeviceConnection {
     ) {}
 
     public get isConnected(): boolean {
-        return !this.isClosed;
+        return !this.session.isConnected;
     }
 
     public async close() {
-        this.isClosed = true;
+        return this.session.close();
     }
 
     public async standby() {
@@ -39,14 +37,6 @@ export class RemotePlayDeviceConnection implements IDeviceConnection {
             return;
         }
 
-        await this.withSession(s => s.sendCommand(RemotePlayCommand.STANDBY));
-    }
-
-    private async withSession<T>(
-        block: (session: RemotePlaySession) => Promise<T>,
-    ): Promise<T> {
-        // TODO: we may need to restart the session if the device
-        // has gone to sleep in the meantime, for example
-        return block(this.session);
+        await this.session.sendCommand(RemotePlayCommand.STANDBY);
     }
 }

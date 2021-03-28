@@ -31,6 +31,14 @@ export class RemotePlaySession {
         private readonly socket: IDeviceSocket,
     ) {}
 
+    public get isConnected() {
+        return this.socket.isConnected;
+    }
+
+    public close() {
+        return this.socket.close();
+    }
+
     public async sendCommand(command: RemotePlayCommand, payload?: Buffer) {
         debug("TODO: send", command);
 
@@ -162,7 +170,13 @@ async function openControlSocket(
 
     const { socket } = response;
 
-    const deviceSocket = new TcpDeviceSocket(device, RemotePlayDeviceProtocol, socket);
+    // take ownership of the socket
+    socket.removeAllListeners();
+    socket.ref();
+
+    const deviceSocket = new TcpDeviceSocket(device, RemotePlayDeviceProtocol, socket, {
+        refSocket: true,
+    });
     deviceSocket.setCodec(codec);
     return deviceSocket;
 }
@@ -177,7 +191,10 @@ export async function openSession(
 
     debug("TODO: login via", config);
     await socket.send(new RemotePlayOutgoingPacket(RemotePlayCommand.LOGIN));
-    for await (const packet of socket.receive()) {
+    const packets = socket.receive();
+
+    debug("TODO: receive...", packets);
+    for await (const packet of packets) {
         debug("GOT: ", packet);
         break;
     }
