@@ -10,6 +10,7 @@ import { RemotePlayPacketCodec } from "./codec";
 import { pickCryptoStrategyForDevice } from "./crypto";
 import { RemotePlayVersion, remotePlayVersionFor, remotePlayVersionToString } from "./model";
 import { RemotePlayCommand, RemotePlayOutgoingPacket } from "./packets";
+import { RemotePlayLoginProc } from "./proc/login";
 import {
     CRYPTO_NONCE_LENGTH,
     padBuffer,
@@ -27,7 +28,6 @@ const OS_TYPE = "Win10.0.0";
 
 export class RemotePlaySession {
     constructor(
-        public readonly config: IConnectionConfig,
         private readonly socket: IDeviceSocket,
     ) {}
 
@@ -189,19 +189,8 @@ export async function openSession(
     const nonce = await initializeSession(device, creds);
     const socket = await openControlSocket(device, creds, nonce);
 
-    debug("TODO: login via", config);
-    await socket.send(new RemotePlayOutgoingPacket(RemotePlayCommand.LOGIN));
-    const packets = socket.receive();
-
-    debug("TODO: receive...", packets);
-    for await (const packet of packets) {
-        debug("GOT: ", packet);
-        break;
-    }
+    await socket.execute(new RemotePlayLoginProc(config));
 
     debug("RemotePlaySession ready!");
-    return new RemotePlaySession(
-        config,
-        socket,
-    );
+    return new RemotePlaySession(socket);
 }

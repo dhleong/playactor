@@ -5,6 +5,10 @@ export enum RemotePlayCommand {
     LOGIN = 0x05,
 }
 
+export enum RemotePlayResponseType {
+    LOGIN = 0x05,
+}
+
 export class RemotePlayIncomingPacket implements IPacket {
     constructor(
         public readonly type: number,
