@@ -37,6 +37,12 @@ export enum PacketReadState {
     DONE,
 }
 
+export interface IBufferReader {
+    read(data: Buffer, paddingSize?: number): PacketReadState;
+    get(): Buffer;
+    remainder(): Buffer | undefined;
+}
+
 /**
  * Reads a single packet then should be discarded; any data
  * overflow can be retrieved from `remainder()`

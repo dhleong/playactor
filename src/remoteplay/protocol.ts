@@ -3,11 +3,12 @@ import got, { Options, OptionsOfBufferResponseBody } from "got";
 
 import { IDiscoveredDevice } from "../discovery/model";
 import {
-    IDeviceProtocol, IPacket, IPacketReader, PacketReadState,
+    IDeviceProtocol, IPacket, IPacketReader,
 } from "../socket/model";
-import { LengthDelimitedBufferReader } from "../socket/protocol/base";
+import { LengthDelimitedBufferReader, TypedPacketReader } from "../socket/protocol/base";
 import { errorReasonString } from "./model";
-import { RemotePlayIncomingPacket } from "./packets";
+import { RemotePlayIncomingPacket, RemotePlayResponseType } from "./packets";
+import { RemotePlayLoginResultPacket } from "./packets/login-result";
 
 const debug = _debug("playactor:remoteplay:protocol");
 
@@ -105,26 +106,23 @@ export function urlWith(device: IDiscoveredDevice, path: string) {
 
 const PACKET_TYPE_OFFSET = 4;
 
-export class RemotePlayPacketReader implements IPacketReader {
-    private readonly lengthDelimiter = new LengthDelimitedBufferReader({
-        minPacketLength: 8,
-        lengthIncludesHeader: false,
-        littleEndian: false,
-    });
-
-    public read(data: Buffer, paddingSize?: number): PacketReadState {
-        return this.lengthDelimiter.read(data, paddingSize);
+export class RemotePlayPacketReader extends TypedPacketReader {
+    constructor() {
+        super({
+            [RemotePlayResponseType.LOGIN]: RemotePlayLoginResultPacket,
+        }, new LengthDelimitedBufferReader({
+            minPacketLength: 8,
+            lengthIncludesHeader: false,
+            littleEndian: false,
+        }));
     }
 
-    public get(): IPacket {
-        const buf = this.lengthDelimiter.get();
-        debug("got=", buf);
-        const type = buf.readInt16BE(PACKET_TYPE_OFFSET);
-        return new RemotePlayIncomingPacket(type, buf);
+    protected readType(buffer: Buffer): number {
+        return buffer.readInt16BE(PACKET_TYPE_OFFSET);
     }
 
-    public remainder(): Buffer | undefined {
-        return this.lengthDelimiter.remainder();
+    protected createDefaultPacket(type: number, buffer: Buffer): IPacket {
+        return new RemotePlayIncomingPacket(type, buffer);
     }
 }
 

@@ -1,10 +1,12 @@
 import _debug from "debug";
 
-import { PacketReadState } from "../model";
+import {
+    IBufferReader, IPacket, IPacketReader, PacketReadState,
+} from "../model";
 
 const DEFAULT_MIN_PACKET_LENGTH = 4;
 
-const debug = _debug("playactor:socket:length");
+const debug = _debug("playactor:socket:base");
 
 export interface IOptions {
     minPacketLength?: number;
@@ -12,7 +14,7 @@ export interface IOptions {
     littleEndian?: boolean;
 }
 
-export class LengthDelimitedBufferReader {
+export class LengthDelimitedBufferReader implements IBufferReader {
     private readonly minPacketLength: number;
     private readonly lengthIncludesHeader: boolean;
     private readonly littleEndian: boolean;
@@ -92,5 +94,43 @@ export class LengthDelimitedBufferReader {
         return this.lengthIncludesHeader
             ? this.expectedLength
             : this.expectedLength + this.minPacketLength;
+    }
+}
+
+export interface PacketConstructor {
+    new (data: Buffer): IPacket;
+}
+
+/**
+ * The [TypedPacketReader] delegates most of its functionality to an
+ * [IBufferReader] (by default, [LengthDelimitedBufferReader]) and
+ * creates packets given a map of type to constructor
+ */
+export abstract class TypedPacketReader implements IPacketReader {
+    constructor(
+        private readonly packets: {[key: number]: PacketConstructor},
+        private readonly base: IBufferReader = new LengthDelimitedBufferReader(),
+    ) {}
+
+    protected abstract readType(buffer: Buffer): number;
+    protected abstract createDefaultPacket(type: number, buffer: Buffer): IPacket;
+
+    public read(data: Buffer, paddingSize?: number): PacketReadState {
+        return this.base.read(data, paddingSize);
+    }
+
+    public get(): IPacket {
+        const buf = this.base.get();
+        const type = this.readType(buf);
+        const Constructor = this.packets[type];
+        if (!Constructor) {
+            debug(`received unsupported packet[${type}]: `, buf);
+            return this.createDefaultPacket(type, buf);
+        }
+        return new Constructor(buf);
+    }
+
+    public remainder(): Buffer | undefined {
+        return this.base.remainder();
     }
 }
