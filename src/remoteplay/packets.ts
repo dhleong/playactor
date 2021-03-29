@@ -32,9 +32,9 @@ export class RemotePlayOutgoingPacket implements IPacket {
 
     public toBuffer(): Buffer {
         const prelude = Buffer.alloc(8 + (this.payload?.length ?? 0));
-        prelude.writeInt32LE(this.payload?.length ?? 0);
-        prelude.writeInt16BE(this.type, 4);
-        prelude.writeInt16LE(0, 6);
+        prelude.writeUInt32BE(this.payload?.length ?? 0);
+        prelude.writeUInt16BE(this.type, 4);
+        prelude.writeInt16BE(0, 6);
 
         return this.payload
             ? Buffer.concat([prelude, this.payload])
