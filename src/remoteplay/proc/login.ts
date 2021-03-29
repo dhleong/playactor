@@ -5,6 +5,7 @@ import { LoginResultError } from "../../socket/packets/incoming/login-result";
 import { RemotePlayCommand, RemotePlayOutgoingPacket, RemotePlayResponseType } from "../packets";
 import { RemotePlayLoginResultPacket } from "../packets/login-result";
 import { RemotePlayPasscodeRequestPacket } from "../packets/passcode-request";
+import { RemotePlayPasscodeResponsePacket } from "../packets/passcode-response";
 
 type Result = RemotePlayLoginResultPacket | RemotePlayPasscodeRequestPacket;
 
@@ -21,14 +22,20 @@ export class RemotePlayLoginProc implements IDeviceProc {
         );
 
         if (response.type === RemotePlayResponseType.Passcode) {
-            if (!this.config.login?.passCode) {
+            const passCode = this.config.login?.passCode;
+            if (!passCode || !passCode.length) {
                 throw new RpcError(
                     1,
                     LoginResultError.PASSCODE_IS_NEEDED,
                 );
             }
 
-            // TODO send passcode
+            // send the passcode
+            await performRpc(
+                socket,
+                new RemotePlayPasscodeResponsePacket(passCode),
+                RemotePlayResponseType.Login,
+            );
         }
     }
 }

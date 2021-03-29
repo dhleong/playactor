@@ -4,6 +4,7 @@ export enum RemotePlayCommand {
     Standby = 0x50,
     Login = 0x05,
     Heartbeat = 0x1fe,
+    ProvidePasscode = 0x8004,
 }
 
 export enum RemotePlayResponseType {
