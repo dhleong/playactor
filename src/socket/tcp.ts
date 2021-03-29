@@ -119,7 +119,6 @@ export class TcpDeviceSocket implements IDeviceSocket {
         };
 
         this.receivers.push(receiver);
-        debug("registered receiver @", this.stream);
         return receiver;
     }
 
