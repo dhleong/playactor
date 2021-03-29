@@ -1,32 +1,24 @@
 import _debug from "debug";
 
-import { IRemotePlayCredentials } from "../credentials/model";
-import { IConnectionConfig } from "../device/model";
 import { DeviceStatus, IDiscoveredDevice } from "../discovery/model";
-import { RemotePlayCommand } from "../remoteplay/packets";
-import { RemotePlaySession } from "../remoteplay/session";
-import { Waker } from "../waker";
+import { RemotePlayCommand, RemotePlayOutgoingPacket } from "../remoteplay/packets";
+import { IDeviceSocket } from "../socket/model";
 import { IDeviceConnection } from "./model";
 
 const debug = _debug("playactor:connection:remoteplay");
 
 export class RemotePlayDeviceConnection implements IDeviceConnection {
     constructor(
-        // FIXME most of these are only public to avoid typescript whining
-        public readonly waker: Waker,
-        public readonly device: IDiscoveredDevice,
         private readonly resolveDevice: () => Promise<IDiscoveredDevice>,
-        public readonly config: IConnectionConfig,
-        public readonly creds: IRemotePlayCredentials,
-        private session: RemotePlaySession,
+        private socket: IDeviceSocket,
     ) {}
 
     public get isConnected(): boolean {
-        return !this.session.isConnected;
+        return !this.socket.isConnected;
     }
 
     public async close() {
-        return this.session.close();
+        return this.socket.close();
     }
 
     public async standby() {
@@ -37,6 +29,8 @@ export class RemotePlayDeviceConnection implements IDeviceConnection {
             return;
         }
 
-        await this.session.sendCommand(RemotePlayCommand.Standby);
+        await this.socket.send(new RemotePlayOutgoingPacket(
+            RemotePlayCommand.Standby,
+        ));
     }
 }

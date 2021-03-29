@@ -4,12 +4,10 @@ import http from "http";
 import { IRemotePlayCredentials } from "../credentials/model";
 import { IConnectionConfig } from "../device/model";
 import { IDiscoveredDevice } from "../discovery/model";
-import { IDeviceSocket } from "../socket/model";
 import { TcpDeviceSocket } from "../socket/tcp";
 import { RemotePlayPacketCodec } from "./codec";
 import { pickCryptoStrategyForDevice } from "./crypto";
 import { RemotePlayVersion, remotePlayVersionFor, remotePlayVersionToString } from "./model";
-import { RemotePlayCommand, RemotePlayOutgoingPacket } from "./packets";
 import { RemotePlayLoginProc } from "./proc/login";
 import {
     CRYPTO_NONCE_LENGTH,
@@ -25,27 +23,6 @@ const DID_PREFIX = Buffer.from([
 ]);
 const DID_SUFFIX = Buffer.from([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
 const OS_TYPE = "Win10.0.0";
-
-export class RemotePlaySession {
-    constructor(
-        private readonly socket: IDeviceSocket,
-    ) {}
-
-    public get isConnected() {
-        return this.socket.isConnected;
-    }
-
-    public close() {
-        return this.socket.close();
-    }
-
-    public async sendCommand(command: RemotePlayCommand, payload?: Buffer) {
-        debug("TODO: send", command);
-
-        const packet = new RemotePlayOutgoingPacket(command, payload);
-        await this.socket.send(packet);
-    }
-}
 
 /**
  * Step 1: initialize the session and fetch the "server nonce" value
@@ -192,5 +169,5 @@ export async function openSession(
     await socket.execute(new RemotePlayLoginProc(config));
 
     debug("RemotePlaySession ready!");
-    return new RemotePlaySession(socket);
+    return socket;
 }

@@ -23,11 +23,7 @@ export async function openRemotePlay(
     );
 
     return new RemotePlayDeviceConnection(
-        waker,
-        discovered,
         device.resolve.bind(device),
-        config,
-        creds,
         session,
     );
 }
