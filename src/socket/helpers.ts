@@ -38,24 +38,25 @@ const rpcDebug = _debug("playactor:socket:rpc");
 export async function performRpc<R extends IResultPacket>(
     socket: IDeviceSocket,
     request: IPacket,
-    resultType: number,
+    ...resultTypes: number[]
 ) {
     await socket.send(request);
 
-    const resultPacket = await receiveType<R>(
+    const typesSet = new Set(resultTypes);
+    const resultPacket = await receiveWhere(
         socket,
-        resultType,
-    );
+        packet => typesSet.has(packet.type),
+    ) as R;
 
     if (resultPacket instanceof UnsupportedIncomingPacket) {
-        throw new Error(`Unexpectedly received UnsupportedIncomingPacket for ${resultType}`);
+        throw new Error(`Unexpectedly received UnsupportedIncomingPacket for ${typesSet}`);
     }
 
     const { errorCode, result } = resultPacket;
     if (result === undefined) {
         throw new Error(`Received packet has no result: ${resultPacket.constructor.name} ${JSON.stringify(resultPacket)}`);
     } else if (result !== 0) {
-        rpcDebug(`Received error result ${result} (in: `, resultPacket, `) expected type ${resultType} from request:`, request);
+        rpcDebug(`Received error result ${result} (in: `, resultPacket, `) expected type ${resultTypes} from request:`, request);
         throw new RpcError(result, errorCode);
     }
 

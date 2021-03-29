@@ -17,7 +17,7 @@ export class RemotePlayLoginProc implements IDeviceProc {
         const response = await performRpc<Result>(
             socket,
             new RemotePlayOutgoingPacket(RemotePlayCommand.LOGIN),
-            RemotePlayResponseType.LOGIN,
+            RemotePlayResponseType.LOGIN, RemotePlayResponseType.PASSCODE,
         );
 
         if (response.type === RemotePlayResponseType.PASSCODE) {

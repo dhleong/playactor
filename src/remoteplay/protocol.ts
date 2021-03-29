@@ -9,6 +9,7 @@ import { LengthDelimitedBufferReader, TypedPacketReader } from "../socket/protoc
 import { errorReasonString } from "./model";
 import { RemotePlayIncomingPacket, RemotePlayResponseType } from "./packets";
 import { RemotePlayLoginResultPacket } from "./packets/login-result";
+import { RemotePlayPasscodeRequestPacket } from "./packets/passcode-request";
 
 const debug = _debug("playactor:remoteplay:protocol");
 
@@ -110,6 +111,7 @@ export class RemotePlayPacketReader extends TypedPacketReader {
     constructor() {
         super({
             [RemotePlayResponseType.LOGIN]: RemotePlayLoginResultPacket,
+            [RemotePlayResponseType.PASSCODE]: RemotePlayPasscodeRequestPacket,
         }, new LengthDelimitedBufferReader({
             minPacketLength: 8,
             lengthIncludesHeader: false,
