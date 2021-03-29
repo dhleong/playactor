@@ -3,11 +3,13 @@ import got, { Options, OptionsOfBufferResponseBody } from "got";
 
 import { IDiscoveredDevice } from "../discovery/model";
 import {
-    IDeviceProtocol, IPacket, IPacketReader,
+    IDeviceProtocol, IDeviceSocket, IPacket, IPacketReader,
 } from "../socket/model";
 import { LengthDelimitedBufferReader, TypedPacketReader } from "../socket/protocol/base";
 import { errorReasonString } from "./model";
-import { RemotePlayIncomingPacket, RemotePlayResponseType } from "./packets";
+import {
+    RemotePlayCommand, RemotePlayIncomingPacket, RemotePlayOutgoingPacket, RemotePlayResponseType,
+} from "./packets";
 import { RemotePlayLoginResultPacket } from "./packets/login-result";
 import { RemotePlayPasscodeRequestPacket } from "./packets/passcode-request";
 
@@ -110,8 +112,8 @@ const PACKET_TYPE_OFFSET = 4;
 export class RemotePlayPacketReader extends TypedPacketReader {
     constructor() {
         super({
-            [RemotePlayResponseType.LOGIN]: RemotePlayLoginResultPacket,
-            [RemotePlayResponseType.PASSCODE]: RemotePlayPasscodeRequestPacket,
+            [RemotePlayResponseType.Login]: RemotePlayLoginResultPacket,
+            [RemotePlayResponseType.Passcode]: RemotePlayPasscodeRequestPacket,
         }, new LengthDelimitedBufferReader({
             minPacketLength: 8,
             lengthIncludesHeader: false,
@@ -134,4 +136,18 @@ export const RemotePlayDeviceProtocol: IDeviceProtocol = {
     createPacketReader(): IPacketReader {
         return new RemotePlayPacketReader();
     },
+
+    async onPacketReceived(
+        socket: IDeviceSocket,
+        packet: IPacket,
+    ) {
+        switch (packet.type) {
+            case RemotePlayResponseType.Heartbeat:
+                await socket.send(new RemotePlayOutgoingPacket(
+                    RemotePlayCommand.Heartbeat,
+                ));
+                break;
+        }
+    },
+
 };

@@ -37,6 +37,6 @@ export class RemotePlayDeviceConnection implements IDeviceConnection {
             return;
         }
 
-        await this.session.sendCommand(RemotePlayCommand.STANDBY);
+        await this.session.sendCommand(RemotePlayCommand.Standby);
     }
 }

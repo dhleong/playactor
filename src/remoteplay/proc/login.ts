@@ -16,11 +16,11 @@ export class RemotePlayLoginProc implements IDeviceProc {
     public async perform(socket: IDeviceSocket) {
         const response = await performRpc<Result>(
             socket,
-            new RemotePlayOutgoingPacket(RemotePlayCommand.LOGIN),
-            RemotePlayResponseType.LOGIN, RemotePlayResponseType.PASSCODE,
+            new RemotePlayOutgoingPacket(RemotePlayCommand.Login),
+            RemotePlayResponseType.Login, RemotePlayResponseType.Passcode,
         );
 
-        if (response.type === RemotePlayResponseType.PASSCODE) {
+        if (response.type === RemotePlayResponseType.Passcode) {
             if (!this.config.login?.passCode) {
                 throw new RpcError(
                     1,

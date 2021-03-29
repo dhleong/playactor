@@ -1,13 +1,15 @@
 import { IPacket } from "../socket/model";
 
 export enum RemotePlayCommand {
-    STANDBY = 0x50,
-    LOGIN = 0x05,
+    Standby = 0x50,
+    Login = 0x05,
+    Heartbeat = 0x1fe,
 }
 
 export enum RemotePlayResponseType {
-    PASSCODE = 0x4,
-    LOGIN = 0x05,
+    Passcode = 0x4,
+    Login = 0x05,
+    Heartbeat = 0xfe,
 }
 
 export class RemotePlayIncomingPacket implements IPacket {

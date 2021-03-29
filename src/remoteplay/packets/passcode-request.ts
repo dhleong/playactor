@@ -8,6 +8,6 @@ import { RemotePlayResponseType } from "../packets";
 export class RemotePlayPasscodeRequestPacket
     extends IncomingPacket
     implements IResultPacket {
-    public readonly type: number = RemotePlayResponseType.PASSCODE;
+    public readonly type: number = RemotePlayResponseType.Passcode;
     public result = 0;
 }
