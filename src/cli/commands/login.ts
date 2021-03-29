@@ -12,7 +12,7 @@ export default class extends Command {
     ) {
         const device = await deviceSpec.findDevice();
         // TODO clear credentials?
-        const conn = await device.openConnection();
+        const conn = await device.openConnection(deviceSpec.connectionConfig);
         await conn.close();
     }
 }
