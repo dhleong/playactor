@@ -11,7 +11,7 @@ export enum PassCodeKey {
     Square = 0,
 }
 
-const PASSCODE_LENGTH = 8;
+const PASSCODE_LENGTH = 4;
 
 const nameToKey = Object.keys(PassCodeKey)
     .reduce((m, key) => {
