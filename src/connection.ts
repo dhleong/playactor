@@ -22,10 +22,7 @@ export async function openRemotePlay(
         creds,
     );
 
-    return new RemotePlayDeviceConnection(
-        device.resolve.bind(device),
-        session,
-    );
+    return new RemotePlayDeviceConnection(session);
 }
 
 export async function openSecondScreen(

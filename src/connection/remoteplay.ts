@@ -1,6 +1,5 @@
 import _debug from "debug";
 
-import { DeviceStatus, IDiscoveredDevice } from "../discovery/model";
 import { RemotePlayCommand, RemotePlayOutgoingPacket } from "../remoteplay/packets";
 import { IDeviceSocket } from "../socket/model";
 import { IDeviceConnection } from "./model";
@@ -9,7 +8,6 @@ const debug = _debug("playactor:connection:remoteplay");
 
 export class RemotePlayDeviceConnection implements IDeviceConnection {
     constructor(
-        private readonly resolveDevice: () => Promise<IDiscoveredDevice>,
         private socket: IDeviceSocket,
     ) {}
 
@@ -22,15 +20,13 @@ export class RemotePlayDeviceConnection implements IDeviceConnection {
     }
 
     public async standby() {
-        const { status } = await this.resolveDevice();
-        if (status === DeviceStatus.STANDBY) {
-            // nop
-            debug("device already in standby");
-            return;
-        }
-
         await this.socket.send(new RemotePlayOutgoingPacket(
             RemotePlayCommand.Standby,
         ));
+
+        // wait until the socket closes
+        for await (const pack of this.socket.receive()) {
+            debug("received...", pack);
+        }
     }
 }
