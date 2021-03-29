@@ -6,6 +6,7 @@ export enum RemotePlayCommand {
 }
 
 export enum RemotePlayResponseType {
+    PASSCODE = 0x4,
     LOGIN = 0x05,
 }
 
