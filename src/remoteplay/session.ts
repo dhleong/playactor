@@ -151,11 +151,9 @@ async function openControlSocket(
     socket.removeAllListeners();
     socket.ref();
 
-    const deviceSocket = new TcpDeviceSocket(device, RemotePlayDeviceProtocol, socket, {
+    return new TcpDeviceSocket(device, RemotePlayDeviceProtocol, socket, {
         refSocket: true,
-    });
-    deviceSocket.setCodec(codec);
-    return deviceSocket;
+    }, codec);
 }
 
 export async function openSession(

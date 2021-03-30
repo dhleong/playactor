@@ -1,6 +1,10 @@
+import _debug from "debug";
+
 import { IRemotePlayCredentials } from "../credentials/model";
 import { IPacketCodec } from "../socket/model";
 import { ICryptoStrategy } from "./crypto/model";
+
+const debug = _debug("playactor:remoteplay:codec");
 
 const HEADER_SIZE = 8;
 
@@ -15,10 +19,15 @@ export class RemotePlayPacketCodec implements IPacketCodec {
     ) {}
 
     public encode(packet: Buffer): Buffer {
-        return Buffer.concat([
+        const encoded = Buffer.concat([
             packet.slice(0, HEADER_SIZE),
             this.encodeBuffer(packet.slice(HEADER_SIZE)),
         ]);
+
+        debug("original: ", packet);
+        debug(" encoded: ", encoded);
+
+        return encoded;
     }
 
     public decode(packet: Buffer): Buffer {

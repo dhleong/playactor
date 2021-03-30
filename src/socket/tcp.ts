@@ -66,7 +66,7 @@ export class TcpDeviceSocket implements IDeviceSocket {
     }
 
     private readonly receivers: CancellableAsyncSink<IPacket>[] = [];
-    private codec: IPacketCodec = PlaintextCodec;
+    private codec: IPacketCodec;
     private readonly processor: BufferPacketProcessor;
 
     private stayAliveUntil = 0;
@@ -77,11 +77,13 @@ export class TcpDeviceSocket implements IDeviceSocket {
         private readonly protocol: IDeviceProtocol,
         private readonly stream: net.Socket,
         private readonly options: IOptions = defaultOptions,
+        initialCodec: IPacketCodec = PlaintextCodec,
         public readonly openedTimestamp: number = Date.now(),
     ) {
+        this.codec = initialCodec;
         this.processor = new BufferPacketProcessor(
             protocol,
-            this.codec,
+            initialCodec,
             packet => this.onPacketReceived(packet),
         );
 
