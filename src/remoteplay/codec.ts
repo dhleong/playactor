@@ -31,9 +31,21 @@ export class RemotePlayPacketCodec implements IPacketCodec {
     }
 
     public decode(packet: Buffer): Buffer {
+        // NOTE: baking the header read into this codec like we're doing here
+        // is not ideal, but it's important to avoid double/over-decoding
+        if (packet.length < HEADER_SIZE) {
+            return packet;
+        }
+
+        const length = packet.readUInt32BE();
+        if (packet.length < HEADER_SIZE + length) {
+            return packet;
+        }
+
         return Buffer.concat([
             packet.slice(0, HEADER_SIZE),
-            this.decodeBuffer(packet.slice(HEADER_SIZE)),
+            this.decodeBuffer(packet.slice(HEADER_SIZE, HEADER_SIZE + length)),
+            packet.slice(HEADER_SIZE + length),
         ]);
     }
 
