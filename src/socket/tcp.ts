@@ -182,19 +182,16 @@ export class TcpDeviceSocket implements IDeviceSocket {
     }
 
     private onPacketReceived(packet: IPacket) {
+        this.protocol.onPacketReceived?.(this, packet).catch(err => {
+            debug("protocol error from", packet, ":", err);
+
+            if (!this.isConnected) {
+                throw err;
+            }
+        });
+
         for (const receiver of this.receivers) {
             receiver.write(packet);
-        }
-
-        const handler = this.protocol.onPacketReceived;
-        if (handler) {
-            handler(this, packet).catch(err => {
-                debug("protocol error from", packet, ":", err);
-
-                if (!this.isConnected) {
-                    throw err;
-                }
-            });
         }
     }
 
