@@ -23,10 +23,19 @@ const protocolsByVersion = {
 
 const debug = _debug("playactor:socket:tcp");
 
+export interface IOptions {
+    refSocket: boolean;
+}
+
+const defaultOptions: IOptions = {
+    refSocket: false,
+};
+
 export class TcpDeviceSocket implements IDeviceSocket {
     public static connectTo(
         device: IDiscoveredDevice,
         config: ISocketConfig,
+        options: IOptions = defaultOptions,
     ) {
         const port = device.hostRequestPort;
         if (!port) {
@@ -47,7 +56,7 @@ export class TcpDeviceSocket implements IDeviceSocket {
             socket.once("connect", () => {
                 debug("socket connected!");
                 socket.removeAllListeners("error");
-                resolve(new TcpDeviceSocket(device, protocol, socket));
+                resolve(new TcpDeviceSocket(device, protocol, socket, options));
             });
             socket.once("error", err => {
                 debug("error on socket:", err);
@@ -57,7 +66,7 @@ export class TcpDeviceSocket implements IDeviceSocket {
     }
 
     private readonly receivers: CancellableAsyncSink<IPacket>[] = [];
-    private codec: IPacketCodec = PlaintextCodec;
+    private codec: IPacketCodec;
     private readonly processor: BufferPacketProcessor;
 
     private stayAliveUntil = 0;
@@ -67,13 +76,20 @@ export class TcpDeviceSocket implements IDeviceSocket {
         public readonly device: IDiscoveredDevice,
         private readonly protocol: IDeviceProtocol,
         private readonly stream: net.Socket,
+        private readonly options: IOptions = defaultOptions,
+        initialCodec: IPacketCodec = PlaintextCodec,
         public readonly openedTimestamp: number = Date.now(),
     ) {
+        this.codec = initialCodec;
         this.processor = new BufferPacketProcessor(
             protocol,
-            this.codec,
+            initialCodec,
             packet => this.onPacketReceived(packet),
         );
+
+        if (this.options.refSocket) {
+            stream.ref();
+        }
 
         stream.on("end", () => this.handleEnd());
         stream.on("error", err => this.handleEnd(err));
@@ -140,10 +156,16 @@ export class TcpDeviceSocket implements IDeviceSocket {
     }
 
     public async close() {
+        debug("close()");
+
         const extraLife = this.stayAliveUntil - Date.now();
         if (extraLife > 0) {
             debug("waiting", extraLife, "millis before closing");
             await delayMillis(extraLife);
+        }
+
+        if (this.options.refSocket) {
+            this.stream.unref();
         }
 
         const politeDisconnect = this.protocol.requestDisconnect;
@@ -160,19 +182,16 @@ export class TcpDeviceSocket implements IDeviceSocket {
     }
 
     private onPacketReceived(packet: IPacket) {
+        this.protocol.onPacketReceived?.(this, packet).catch(err => {
+            debug("protocol error from", packet, ":", err);
+
+            if (!this.isConnected) {
+                throw err;
+            }
+        });
+
         for (const receiver of this.receivers) {
             receiver.write(packet);
-        }
-
-        const handler = this.protocol.onPacketReceived;
-        if (handler) {
-            handler(this, packet).catch(err => {
-                debug("protocol error from", packet, ":", err);
-
-                if (!this.isConnected) {
-                    throw err;
-                }
-            });
         }
     }
 

@@ -3,6 +3,7 @@ import got from "got";
 import { IInputOutput } from "../../cli/io";
 
 import { IDiscoveredDevice } from "../../discovery/model";
+import { parseHexBytes } from "../../remoteplay/protocol";
 import { RemotePlayRegistration } from "../../remoteplay/registration";
 import { ICredentialRequester, ICredentials } from "../model";
 import { OauthStrategy } from "./model";
@@ -43,13 +44,9 @@ export function extractAccountId(accountInfo: RawAccountInfo) {
 
 export function registKeyToCredential(registKey: string) {
     // this is so bizarre, but here it is:
-    const buffer = Buffer.alloc(registKey.length / 2);
-    for (let i = 0; i < registKey.length; i += 2) {
-        // 1. Every 2 chars in registKey is interpreted as a hex byte
-        const byteAsString = registKey.slice(i, i + 2);
-        const byte = parseInt(byteAsString, 16);
-        buffer.writeUInt8(byte, i / 2);
-    }
+
+    // 1. Every 2 chars in data is interpreted as a hex byte
+    const buffer = parseHexBytes(registKey);
 
     // 2. The bytes are treated as a utf-8-encoded string
     const asString = buffer.toString("utf-8");
@@ -66,34 +63,6 @@ export class OauthCredentialRequester implements ICredentialRequester {
         private io: IInputOutput,
         private strategy: OauthStrategy,
     ) {}
-
-    public async performOauth() {
-        const redirected = await this.strategy.performLogin(LOGIN_URL);
-
-        const url = new URL(redirected);
-        const code = url.searchParams.get("code");
-        if (!code) {
-            throw new Error("Did not get OAuth Code");
-        }
-
-        const accessToken = await this.exchangeCodeForAccess(code);
-        debug(`Fetched access token (${accessToken}); requesting account info`);
-
-        const accountInfo: RawAccountInfo = await got(`${TOKEN_URL}/${accessToken}`, {
-            username: CLIENT_ID,
-            password: CLIENT_SECRET,
-        }).json();
-
-        return extractAccountId(accountInfo);
-    }
-
-    public async registerWithDevice(device: IDiscoveredDevice, accountId: string, pin: string) {
-        const registration = new RemotePlayRegistration();
-        return registration.register(device, {
-            accountId,
-            pin,
-        });
-    }
 
     public async requestForDevice(device: IDiscoveredDevice): Promise<ICredentials> {
         const accountId = await this.performOauth();
@@ -121,6 +90,34 @@ export class OauthCredentialRequester implements ICredentialRequester {
             accountId,
             registration,
         };
+    }
+
+    private async performOauth() {
+        const redirected = await this.strategy.performLogin(LOGIN_URL);
+
+        const url = new URL(redirected);
+        const code = url.searchParams.get("code");
+        if (!code) {
+            throw new Error("Did not get OAuth Code");
+        }
+
+        const accessToken = await this.exchangeCodeForAccess(code);
+        debug(`Fetched access token (${accessToken}); requesting account info`);
+
+        const accountInfo: RawAccountInfo = await got(`${TOKEN_URL}/${accessToken}`, {
+            username: CLIENT_ID,
+            password: CLIENT_SECRET,
+        }).json();
+
+        return extractAccountId(accountInfo);
+    }
+
+    private async registerWithDevice(device: IDiscoveredDevice, accountId: string, pin: string) {
+        const registration = new RemotePlayRegistration();
+        return registration.register(device, {
+            accountId,
+            pin,
+        });
     }
 
     private async exchangeCodeForAccess(code: string) {

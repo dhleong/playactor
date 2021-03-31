@@ -4,18 +4,26 @@ import _debug from "debug";
 import { IDiscoveredDevice } from "../discovery/model";
 import { CryptoCodec } from "../socket/crypto-codec";
 import { LegacyCryptoStrategy } from "./crypto/legacy";
-import { ICryptoStrategy } from "./crypto/model";
 import { ModernCryptoStrategy } from "./crypto/modern";
 import { RemotePlayVersion, remotePlayVersionFor } from "./model";
+import { CRYPTO_NONCE_LENGTH } from "./protocol";
 
 const debug = _debug("playactor:remoteplay:crypto");
-
-const CRYPTO_NONCE_LENGTH = 16;
 
 function generateNonce() {
     const nonce = Buffer.alloc(CRYPTO_NONCE_LENGTH);
     crypto.randomFillSync(nonce);
     return nonce;
+}
+
+export function pickCryptoStrategyForDevice(device: IDiscoveredDevice) {
+    const version = remotePlayVersionFor(device);
+    const strategy = version < RemotePlayVersion.PS4_10
+        ? new LegacyCryptoStrategy(version)
+        : new ModernCryptoStrategy(device.type, version);
+
+    debug("selected", strategy, "for remote play version", RemotePlayVersion[version]);
+    return strategy;
 }
 
 export class RemotePlayCrypto {
@@ -24,29 +32,20 @@ export class RemotePlayCrypto {
         pin: string,
         nonce: Buffer = generateNonce(),
     ) {
-        const version = remotePlayVersionFor(device);
-        const strategy = version < RemotePlayVersion.PS4_10
-            ? new LegacyCryptoStrategy(version, pin)
-            : new ModernCryptoStrategy(device.type, version, pin);
+        const strategy = pickCryptoStrategyForDevice(device);
+        const { codec, preface } = strategy.createCodecForPin(pin, nonce);
 
-        debug("selected", strategy, "for remote play version", RemotePlayVersion[version]);
-        return new RemotePlayCrypto(strategy, nonce);
+        return new RemotePlayCrypto(codec, preface, nonce);
     }
 
-    private readonly codec: CryptoCodec;
-    private readonly preface: Buffer;
-
     constructor(
-        public readonly strategy: ICryptoStrategy,
+        private readonly codec: CryptoCodec,
+        private readonly preface: Buffer,
         nonce: Buffer,
     ) {
         if (nonce.length !== CRYPTO_NONCE_LENGTH) {
             throw new Error(`Invalid nonce: ${nonce.toString("base64")}`);
         }
-
-        const { codec, preface } = strategy.createCodec(nonce);
-        this.codec = codec;
-        this.preface = preface;
     }
 
     public createSignedPayload(payload: Record<string, string>) {

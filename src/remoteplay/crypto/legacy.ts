@@ -1,12 +1,6 @@
-import crypto from "crypto";
-import { CryptoCodec } from "../../socket/crypto-codec";
-
-import { RemotePlayVersion } from "../model";
-import { ICryptoStrategy } from "./model";
-import { generateIv } from "./modern";
+import { BaseCryptoStrategy } from "./base";
 
 const KEY_SIZE = 16;
-const PADDING_BYTES = 480;
 const AES_KEY = "3f1cc4b6dcbb3ecc50baedef9734c7c9";
 
 function generateSeed(pin: number) {
@@ -22,6 +16,11 @@ function generateSeed(pin: number) {
     /* eslint-enable no-bitwise */
 }
 
+const ECHO_A = [
+    0x01, 0x49, 0x87, 0x9b, 0x65, 0x39, 0x8b, 0x39,
+    0x4b, 0x3a, 0x8d, 0x48, 0xc3, 0x0a, 0xef, 0x51,
+];
+
 const ECHO_B = [
     0xe1, 0xec, 0x9c, 0x3a, 0xdd, 0xbd, 0x08, 0x85,
     0xfc, 0x0e, 0x1d, 0x78, 0x90, 0x32, 0xc0, 0x04,
@@ -35,29 +34,27 @@ function aeropause(padding: Buffer, offset: number, nonce: Buffer) {
     /* eslint-enable no-bitwise, no-param-reassign */
 }
 
-export class LegacyCryptoStrategy implements ICryptoStrategy {
-    private counter = 0;
+export class LegacyCryptoStrategy extends BaseCryptoStrategy {
+    protected generatePinSeed(_padding: Buffer, pinNumber: number): Buffer {
+        return generateSeed(pinNumber);
+    }
 
-    constructor(
-        private readonly version: RemotePlayVersion,
-        private readonly pin: string,
-    ) {}
-
-    public createCodec(nonce: Buffer) {
-        const pinNumber = parseInt(this.pin, 10);
-
-        const padding = Buffer.alloc(PADDING_BYTES);
-        crypto.randomFillSync(padding);
-
+    protected signPadding(nonce: Buffer, padding: Buffer) {
         const AEROPAUSE_DESTINATION = 0x11c;
         aeropause(padding, AEROPAUSE_DESTINATION, nonce);
-
-        const iv = generateIv(this.version, nonce, this.counter);
-        const seed = generateSeed(pinNumber);
-        const codec = new CryptoCodec(iv, seed);
-        return {
-            codec,
-            preface: padding,
-        };
     }
+
+    /* eslint-disable no-bitwise */
+    protected generateAuthSeed(key: Buffer, serverNonce: Buffer) {
+        return Buffer.from(
+            key.map((keyValue, i) => ((keyValue - i + 0x34) ^ ECHO_B[i]) ^ serverNonce[i]).buffer,
+        );
+    }
+
+    protected transformServerNonceForAuth(serverNonce: Buffer): Buffer {
+        return Buffer.from(
+            serverNonce.map((nonceValue, i) => (nonceValue - i - 0x27) ^ ECHO_A[i]).buffer,
+        );
+    }
+    /* eslint-enable no-bitwise */
 }
