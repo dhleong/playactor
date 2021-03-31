@@ -19,6 +19,12 @@ export class RemotePlayPacketCodec implements IPacketCodec {
     ) {}
 
     public encode(packet: Buffer): Buffer {
+        if (packet.length === HEADER_SIZE) {
+            debug("original: ", packet);
+            debug(" encoded: (nop)");
+            return packet;
+        }
+
         const encoded = Buffer.concat([
             packet.slice(0, HEADER_SIZE),
             this.encodeBuffer(packet.slice(HEADER_SIZE)),
@@ -39,6 +45,10 @@ export class RemotePlayPacketCodec implements IPacketCodec {
 
         const length = packet.readUInt32BE();
         if (packet.length < HEADER_SIZE + length) {
+            return packet;
+        }
+
+        if (!length) {
             return packet;
         }
 
