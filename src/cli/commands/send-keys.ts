@@ -8,7 +8,7 @@ const nameToOp = Object.keys(RemoteOperation).reduce((m, name) => {
     // eslint-disable-next-line no-param-reassign
     m[name.toLowerCase()] = (RemoteOperation as any)[name] as RemoteOperation;
     return m;
-}, {} as {[key: string]: RemoteOperation});
+}, {} as { [key: string]: RemoteOperation });
 
 /** Public for testing */
 export function parseKeys(keys: string[]): KeyPress[] {

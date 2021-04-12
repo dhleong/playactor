@@ -27,7 +27,7 @@ interface IManagedSocket {
 }
 
 class UdpSocketManager {
-    private readonly sockets: {[key: number]: IManagedSocket} = {};
+    private readonly sockets: { [key: number]: IManagedSocket } = {};
 
     public acquire(port: number) {
         debug("acquire @", port);
@@ -112,7 +112,7 @@ export class UdpDiscoveryNetwork implements IDiscoveryNetwork {
 }
 
 function extractDeviceExtras(message: IDiscoveryMessage) {
-    const extras: {[key: string]: string} = {};
+    const extras: { [key: string]: string } = {};
     for (const key of Object.keys(message.data)) {
         if (!(key === "type" || isDiscoveryKey(key))) {
             const value = message.data[key];

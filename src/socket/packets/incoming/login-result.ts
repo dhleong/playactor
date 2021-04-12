@@ -16,7 +16,7 @@ export enum LoginResultError {
     LOGIN_MGR_BUSY = "LOGIN_MGR_BUSY",
 }
 
-const resultToErrorCode: {[result: number]: string} = {
+const resultToErrorCode: { [result: number]: string } = {
     20: LoginResultError.PIN_IS_NEEDED,
     22: LoginResultError.PASSCODE_IS_NEEDED,
     24: LoginResultError.PASSCODE_IS_UNMATCHED,

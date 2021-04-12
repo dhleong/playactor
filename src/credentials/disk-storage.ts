@@ -49,6 +49,6 @@ export class DiskCredentialsStorage implements ICredentialStorage {
             return {};
         }
 
-        return JSON.parse(contents.toString()) as {[key: string]: ICredentials};
+        return JSON.parse(contents.toString()) as { [key: string]: ICredentials };
     }
 }

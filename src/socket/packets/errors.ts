@@ -1,4 +1,4 @@
-export const resultsToErrorCodes: {[result: number]: string} = {
+export const resultsToErrorCodes: { [result: number]: string } = {
     0: "OK",
     1: "BUSY",
     2: "CLIENT_MUST_UPDATE",

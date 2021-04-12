@@ -108,7 +108,7 @@ export interface PacketConstructor {
  */
 export abstract class TypedPacketReader implements IPacketReader {
     constructor(
-        private readonly packets: {[key: number]: PacketConstructor},
+        private readonly packets: { [key: number]: PacketConstructor },
         private readonly base: IBufferReader = new LengthDelimitedBufferReader(),
     ) {}
 

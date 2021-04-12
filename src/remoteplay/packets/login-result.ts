@@ -1,7 +1,7 @@
 import { IncomingPacket, IResultPacket } from "../../socket/packets/base";
 import { LoginResultError } from "../../socket/packets/incoming/login-result";
 
-const toErrorCode: {[result: number]: string} = {
+const toErrorCode: { [result: number]: string } = {
     1: LoginResultError.PASSCODE_IS_UNMATCHED,
 };
 

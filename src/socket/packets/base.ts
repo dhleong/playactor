@@ -39,7 +39,7 @@ export class IncomingResultPacket
 
     constructor(
         private readonly data: Buffer,
-        toErrorCode: {[result: number]: string} = resultsToErrorCodes,
+        toErrorCode: { [result: number]: string } = resultsToErrorCodes,
     ) {
         super();
 

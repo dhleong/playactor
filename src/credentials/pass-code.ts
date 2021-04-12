@@ -18,7 +18,7 @@ const nameToKey = Object.keys(PassCodeKey)
         // eslint-disable-next-line no-param-reassign
         m[key.toLowerCase()] = (PassCodeKey as any)[key] as PassCodeKey;
         return m;
-    }, {} as {[name: string]: PassCodeKey});
+    }, {} as { [name: string]: PassCodeKey });
 
 /**
  * Given a sequence of passcode keys, convert them into the
