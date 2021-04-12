@@ -1,7 +1,7 @@
 playactor
 =========
 
-*play around with your PlayStation devices*
+*play around with your playstation devices*
 
 ## What?
 
