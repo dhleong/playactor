@@ -145,7 +145,10 @@ async function openControlSocket(
     const serverType = decrypt(response.headers, "rp-server-type");
     debug("received server type=", serverType);
 
-    const { socket } = response;
+    // NOTE: response.socket SHOULD never be null, per its typing and documentation,
+    // but apparently it can be on at least Node v14+. request.socket seems to work
+    // on these versions, but is explicitly typed as optional.
+    const socket = response.request.socket ?? response.socket;
 
     // take ownership of the socket
     socket.removeAllListeners();
