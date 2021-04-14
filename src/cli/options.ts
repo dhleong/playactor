@@ -262,6 +262,7 @@ export class DeviceOptions extends DiscoveryOptions {
             new MimCredentialRequester(
                 networkFactory,
                 networkConfig,
+                this,
             ),
             proxiedUserId,
         );

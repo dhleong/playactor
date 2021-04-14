@@ -1,4 +1,5 @@
 import _debug from "debug";
+import { IInputOutput } from "../cli/io";
 
 import {
     IDiscoveredDevice,
@@ -35,6 +36,7 @@ export class MimCredentialRequester implements ICredentialRequester {
     constructor(
         private readonly networkFactory: IDiscoveryNetworkFactory,
         private readonly networkConfig: INetworkConfig,
+        private readonly io?: IInputOutput,
         emulatorOptions: Partial<IEmulatorOptions> = {},
     ) {
         this.emulatorOptions = {
@@ -59,6 +61,10 @@ export class MimCredentialRequester implements ICredentialRequester {
         });
 
         sink.onCancel = () => network.close();
+
+        this.io?.logInfo("Registering with device via Second Screen.");
+        this.io?.logInfo("Open the PS4 Second Screen app and attempt to connect to the device named:");
+        this.io?.logInfo(`  ${this.emulatorOptions.hostName}`);
 
         debug("emulating device; awaiting WAKE...");
         return this.emulateUntilWoken(

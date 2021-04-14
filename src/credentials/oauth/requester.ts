@@ -67,7 +67,8 @@ export class OauthCredentialRequester implements ICredentialRequester {
     public async requestForDevice(device: IDiscoveredDevice): Promise<ICredentials> {
         const accountId = await this.performOauth();
 
-        this.io.logInfo("Registering via Remote Play. Go to Settings > System > Remote Play > Link Device");
+        this.io.logInfo("Registering with device via Remote Play.");
+        this.io.logInfo("Go to Settings > System > Remote Play > Link Device");
         const pin = await this.io.prompt("Enter PIN here> ");
 
         const registration = await this.registerWithDevice(device, accountId, pin);

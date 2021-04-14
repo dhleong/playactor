@@ -83,7 +83,7 @@ export class PinAcceptingDevice implements IDevice {
 
         this.io.logInfo(
             "Go to 'Settings -> Mobile App Connection Settings -> Add Device'"
-            + " on your console to obtain the PIN code.",
+            + " on your console to obtain a PIN code.",
         );
         const pinCode = await this.io.prompt("Pin code> ");
 
