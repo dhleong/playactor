@@ -16,7 +16,7 @@ function ignore(v: any) {
 }
 
 describe("Discovery", () => {
-    let clock: FakeTimers.InstalledClock;
+    let clock: FakeTimers.Clock;
     let discovery: Discovery;
     let netFactory: MockDiscoveryNetworkFactory;
 

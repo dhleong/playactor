@@ -37,7 +37,7 @@
   },
   "homepage": "https://github.com/dhleong/playactor#readme",
   "devDependencies": {
-    "@sinonjs/fake-timers": "^6.0.1",
+    "@sinonjs/fake-timers": "^7.0.5",
     "@types/chai": "^4.2.16",
     "@types/chai-as-promised": "^7.1.3",
     "@types/chai-subset": "^1.3.3",
@@ -45,9 +45,8 @@
     "@types/fs-extra": "^9.0.11",
     "@types/mocha": "^8.2.2",
     "@types/node-rsa": "^1.1.0",
-    "@types/sinon": "^9.0.11",
+    "@types/sinon": "^10.0.0",
     "@types/sinon-chai": "^3.2.5",
-    "@types/sinonjs__fake-timers": "^6.0.2",
     "@typescript-eslint/eslint-plugin": "^4.22.0",
     "@typescript-eslint/parser": "^4.22.0",
     "chai": "^4.3.4",
@@ -58,7 +57,7 @@
     "eslint-config-prettier": "^8.2.0",
     "eslint-plugin-import": "^2.22.1",
     "mocha": "^8.3.2",
-    "sinon": "^9.2.4",
+    "sinon": "^10.0.0",
     "sinon-chai": "^3.6.0",
     "ts-node": "^9.0.0",
     "typescript": "^4.2.4"

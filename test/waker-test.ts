@@ -36,7 +36,7 @@ class FakeWakerNetworkFactory implements IWakerNetworkFactory {
 }
 
 describe("Waker", () => {
-    let clock: FakeTimers.InstalledClock;
+    let clock: FakeTimers.Clock;
     let netFactory: MockDiscoveryNetworkFactory;
     let waker: Waker;
 

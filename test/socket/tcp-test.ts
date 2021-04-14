@@ -11,7 +11,7 @@ chai.use(chaiAsPromised);
 chai.should();
 
 describe("TcpDeviceSocket", () => {
-    let clock: FakeTimers.InstalledClock;
+    let clock: FakeTimers.Clock;
     let stream: FakeStream;
     let socket: TcpDeviceSocket;
 
