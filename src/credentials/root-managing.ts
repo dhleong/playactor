@@ -17,7 +17,7 @@ export class RootMissingError extends Error {
 export class RootManagingCredentialRequester implements ICredentialRequester {
     constructor(
         private readonly delegate: ICredentialRequester,
-        private readonly restoreUserId: number,
+        private readonly restoreUserId?: number,
     ) {}
 
     public async requestForDevice(device: IDiscoveredDevice): Promise<ICredentials> {
@@ -27,7 +27,7 @@ export class RootManagingCredentialRequester implements ICredentialRequester {
 
         const result = await this.delegate.requestForDevice(device);
 
-        if (process.setuid) {
+        if (process.setuid && this.restoreUserId) {
             process.setuid(this.restoreUserId);
             debug("Restored user ID to:", this.restoreUserId);
         }

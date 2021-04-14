@@ -25,10 +25,12 @@ function stopCurrentInvocationForProxy() {
 }
 
 export interface IRootProxyConfig {
-    providedCredentialsPath?: string,
-    effectiveCredentialsPath: string,
-    invocationArgs: string[],
-    currentUserId: number,
+    providedCredentialsPath?: string;
+    effectiveCredentialsPath: string;
+    invocationArgs: string[];
+
+    /** NOTE: Can be undefined on eg Windows, which doesn't support getuid */
+    currentUserId?: number;
 }
 
 /**
@@ -45,14 +47,14 @@ export interface IRootProxyConfig {
 export class RootProxyDevice implements IDevice {
     public static extractProxiedUserId(
         args: string[],
-    ): number {
+    ): number | undefined {
         const argIndex = args.indexOf(PROXIED_ID_ARG);
         const valueIndex = argIndex + 1;
         if (valueIndex > 0 && valueIndex < args.length) {
             return parseInt(args[valueIndex], 10);
         }
 
-        return process.getuid();
+        return process.getuid?.();
     }
 
     public static removeProxiedUserId(
@@ -104,14 +106,15 @@ export class RootProxyDevice implements IDevice {
 
     private async tryResolveError(e: any): Promise<never> {
         if (e instanceof RootMissingError) {
-            if (!this.config.currentUserId) {
-                // already root, but root missing? this probably
-                // shouldn't happen...
+            const { currentUserId } = this.config;
+            if (currentUserId === 0 || currentUserId == null) {
+                // already root (or not on a root-relevant platform), but
+                // root missing? this probably shouldn't happen...
                 throw e;
             }
 
             this.io.logInfo(e.message);
-            await this.proxyCliInvocation();
+            await this.proxyCliInvocation(currentUserId);
 
             stopCurrentInvocationForProxy();
         } else if (
@@ -125,7 +128,7 @@ export class RootProxyDevice implements IDevice {
         throw e;
     }
 
-    private async proxyCliInvocation() {
+    private async proxyCliInvocation(currentUserId: number) {
         const baseArgs = [...this.config.invocationArgs];
 
         if (!this.config.providedCredentialsPath) {
@@ -149,7 +152,7 @@ export class RootProxyDevice implements IDevice {
         await this.cliProxy.invoke([
             ...baseArgs,
             PROXIED_ID_ARG,
-            this.config.currentUserId.toString(),
+            currentUserId.toString(),
         ]);
     }
 }

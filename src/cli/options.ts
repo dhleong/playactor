@@ -237,7 +237,7 @@ export class DeviceOptions extends DiscoveryOptions {
                 providedCredentialsPath: this.credentialsPath,
                 effectiveCredentialsPath: credentialsStorage.filePath,
                 invocationArgs: args,
-                currentUserId: process.getuid(),
+                currentUserId: process.getuid?.(),
             },
         );
     }
@@ -256,7 +256,7 @@ export class DeviceOptions extends DiscoveryOptions {
     private buildCredentialsRequester(
         networkFactory: IDiscoveryNetworkFactory,
         networkConfig: INetworkConfig,
-        proxiedUserId: number,
+        proxiedUserId?: number,
     ) {
         const ps4 = new RootManagingCredentialRequester(
             new MimCredentialRequester(
