@@ -1,6 +1,7 @@
 import {
     Command,
     command,
+    ExpectedError,
     metadata,
     Printable,
 } from "clime";
@@ -58,7 +59,7 @@ export default class extends Command {
             options.logResult(info);
             throw new DeviceStatusSignal(info.status);
         } catch (e) {
-            if (e instanceof DeviceStatusSignal) {
+            if (e instanceof DeviceStatusSignal || e instanceof ExpectedError) {
                 throw e;
             }
 
