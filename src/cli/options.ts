@@ -2,6 +2,7 @@ import debug from "debug";
 import {
     Options,
     option,
+    ExpectedError,
 } from "clime";
 import readline from "readline";
 
@@ -99,7 +100,7 @@ export class DiscoveryOptions extends InputOutputOptions {
         description: "How long to look for device(s)",
         placeholder: "millis",
     })
-    public searchTimeout = defaultDiscoveryConfig.timeoutMillis;
+    public searchTimeout: number = defaultDiscoveryConfig.timeoutMillis;
 
     @option({
         name: "connect-timeout",
@@ -107,7 +108,7 @@ export class DiscoveryOptions extends InputOutputOptions {
         description: "How long to look wait for connection",
         placeholder: "millis",
     })
-    public connectTimeout = defaultSocketConfig.connectTimeoutMillis;
+    public connectTimeout: number = defaultSocketConfig.connectTimeoutMillis;
 
     @option({
         name: "bind-address",
@@ -190,9 +191,23 @@ export class DeviceOptions extends DiscoveryOptions {
     @option({
         name: "host-id",
         description: "Select a specific device by its host-id",
-        placeholder: "name",
+        placeholder: "id",
     })
     public deviceHostId?: string;
+
+    @option({
+        name: "ps4",
+        description: "Ignore non-PS4 devices",
+        toggle: true,
+    })
+    public deviceOnlyPS4 = false;
+
+    @option({
+        name: "ps5",
+        description: "Ignore non-PS5 devices",
+        toggle: true,
+    })
+    public deviceOnlyPS5 = false;
 
     public async findDevice(): Promise<IDevice> {
         this.configureLogging();
@@ -208,12 +223,12 @@ export class DeviceOptions extends DiscoveryOptions {
         const proxiedUserId = RootProxyDevice.extractProxiedUserId(args);
 
         const networkFactory = StandardDiscoveryNetworkFactory;
-        const baseStorage = new DiskCredentialsStorage(
+        const diskCredentialsStorage = new DiskCredentialsStorage(
             this.credentialsPath,
         );
         const credentialsStorage = this.alwaysAuthenticate
-            ? new WriteOnlyStorage(baseStorage)
-            : baseStorage;
+            ? new WriteOnlyStorage(diskCredentialsStorage)
+            : diskCredentialsStorage;
         const credentialsRequester = this.dontAuthenticate
             ? new RejectingCredentialRequester("Not authenticated")
             : this.buildCredentialsRequester(networkFactory, networkConfig, proxiedUserId);
@@ -246,7 +261,7 @@ export class DeviceOptions extends DiscoveryOptions {
             new PinAcceptingDevice(this, device),
             {
                 providedCredentialsPath: this.credentialsPath,
-                effectiveCredentialsPath: baseStorage.filePath,
+                effectiveCredentialsPath: diskCredentialsStorage.filePath,
                 invocationArgs: args,
                 currentUserId: process.getuid?.(),
             },
@@ -262,6 +277,20 @@ export class DeviceOptions extends DiscoveryOptions {
                 passCode: this.passCode?.value ?? "",
             },
         };
+    }
+
+    public get requestedDeviceType(): DeviceType | undefined {
+        if (this.deviceOnlyPS4 && this.deviceOnlyPS5) {
+            const flags = ["--ps4", "--ps5"].join(", ");
+            throw new ExpectedError(
+                // eslint-disable-next-line prefer-template
+                `You must have no more than one of any of these flags:\n  ${flags}`,
+            );
+        } else if (this.deviceOnlyPS4) {
+            return DeviceType.PS4;
+        } else if (this.deviceOnlyPS5) {
+            return DeviceType.PS5;
+        }
     }
 
     private buildCredentialsRequester(
@@ -290,7 +319,7 @@ export class DeviceOptions extends DiscoveryOptions {
     }
 
     private configurePending() {
-        let description = "any device";
+        let description = "device (any)";
         let predicate: (device: IDiscoveredDevice) => boolean = () => true;
 
         if (this.deviceIp) {
@@ -302,6 +331,14 @@ export class DeviceOptions extends DiscoveryOptions {
         } else if (this.deviceHostId) {
             description = `device with id ${this.deviceHostId}`;
             predicate = device => device.id === this.deviceHostId;
+        }
+
+        const requestedType = this.requestedDeviceType;
+        if (requestedType) {
+            const base = predicate;
+            description = `${requestedType} ${description}`;
+            predicate = device => base(device)
+                && device.type === requestedType;
         }
 
         return { description, predicate };
