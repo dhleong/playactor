@@ -17,7 +17,7 @@ export class CliOauthStrategy implements OauthStrategy {
             await this.io.prompt("Hit ENTER to continue");
 
             try {
-                await open(url, { wait: true });
+                await this.openSafely(url);
             } catch (e) {
                 this.io.logInfo("Unable to open the browser for you. This is fine; please manually open the following URL:");
                 this.io.logInfo(`  ${url}`);
@@ -33,5 +33,13 @@ export class CliOauthStrategy implements OauthStrategy {
 
     private printLoginInstructions() {
         this.io.logInfo("When the page shows \"redirect\", copy the URL from your browser's address bar and paste it here.");
+    }
+
+    private async openSafely(url: string) {
+        const proc = await open(url);
+        return new Promise<void>((resolve, reject) => {
+            proc.on("error", reject);
+            proc.on("exit", resolve);
+        });
     }
 }
