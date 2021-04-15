@@ -17,7 +17,7 @@ export class CliOauthStrategy implements OauthStrategy {
             await this.io.prompt("Hit ENTER to continue");
 
             try {
-                await open(url);
+                await open(url, { wait: true });
             } catch (e) {
                 this.io.logInfo("Unable to open the browser for you. This is fine; please manually open the following URL:");
                 this.io.logInfo(`  ${url}`);

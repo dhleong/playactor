@@ -31,6 +31,7 @@ import { defaultSocketConfig, ISocketConfig } from "../socket/model";
 import { CliOauthStrategy } from "../credentials/oauth/cli";
 import { OauthCredentialRequester } from "../credentials/oauth/requester";
 import { DeviceTypeStrategyCredentialRequester } from "../credentials/device-type-strategy";
+import { WriteOnlyStorage } from "../credentials/write-only-storage";
 
 const log = debug("playactor:cli:options");
 
@@ -152,6 +153,13 @@ export class DeviceOptions extends DiscoveryOptions {
     public dontAuthenticate = false;
 
     @option({
+        name: "force-auth",
+        description: "Ignore existing credentials",
+        toggle: true,
+    })
+    public alwaysAuthenticate = false;
+
+    @option({
         name: "credentials",
         flag: "c",
         placeholder: "path",
@@ -200,9 +208,12 @@ export class DeviceOptions extends DiscoveryOptions {
         const proxiedUserId = RootProxyDevice.extractProxiedUserId(args);
 
         const networkFactory = StandardDiscoveryNetworkFactory;
-        const credentialsStorage = new DiskCredentialsStorage(
+        const baseStorage = new DiskCredentialsStorage(
             this.credentialsPath,
         );
+        const credentialsStorage = this.alwaysAuthenticate
+            ? new WriteOnlyStorage(baseStorage)
+            : baseStorage;
         const credentialsRequester = this.dontAuthenticate
             ? new RejectingCredentialRequester("Not authenticated")
             : this.buildCredentialsRequester(networkFactory, networkConfig, proxiedUserId);
@@ -235,7 +246,7 @@ export class DeviceOptions extends DiscoveryOptions {
             new PinAcceptingDevice(this, device),
             {
                 providedCredentialsPath: this.credentialsPath,
-                effectiveCredentialsPath: credentialsStorage.filePath,
+                effectiveCredentialsPath: baseStorage.filePath,
                 invocationArgs: args,
                 currentUserId: process.getuid?.(),
             },
