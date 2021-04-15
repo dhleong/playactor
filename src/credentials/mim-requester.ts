@@ -66,7 +66,7 @@ export class MimCredentialRequester implements ICredentialRequester {
         this.io?.logInfo("Open the PS4 Second Screen app and attempt to connect to the device named:");
         this.io?.logInfo(`  ${this.emulatorOptions.hostName}`);
 
-        debug("emulating device; awaiting WAKE...");
+        debug("emulating device", this.emulatorOptions, "awaiting WAKE...");
         return this.emulateUntilWoken(
             sink,
             network,
@@ -85,8 +85,8 @@ export class MimCredentialRequester implements ICredentialRequester {
         const searchResponse = {
             "host-id": this.emulatorOptions.hostId,
             "host-name": this.emulatorOptions.hostName,
-            "host-type": hostType,
             "host-request-port": localBindPort,
+            "host-type": hostType,
         };
 
         for await (const message of incomingMessages) {

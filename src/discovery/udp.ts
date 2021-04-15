@@ -104,7 +104,7 @@ export class UdpDiscoveryNetwork implements IDiscoveryNetwork {
         message: Buffer,
     ) {
         debug(
-            "send:", message, " to ",
+            "send:", message.toString("hex"), " to ",
             recipientAddress, ":", recipientPort,
         );
         this.socket.send(message, recipientPort, recipientAddress);

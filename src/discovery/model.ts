@@ -37,9 +37,9 @@ export interface IDeviceAddress {
 
 const discoveryKeysArrray = [
     "host-id",
-    "host-type",
-    "host-request-port",
     "host-name",
+    "host-request-port",
+    "host-type",
     "system-version",
     "device-discovery-protocol-version",
 ] as const;
@@ -49,6 +49,7 @@ export type DiscoveryKey = typeof discoveryKeysArrray[number];
 const discoveryKeys: Set<string> = new Set(discoveryKeysArrray);
 
 export const outgoingDiscoveryKeys = new Set([
+    ...discoveryKeysArrray,
     "app-type",
     "auth-type",
     "client-type",
