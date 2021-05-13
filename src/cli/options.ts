@@ -53,6 +53,13 @@ export class InputOutputOptions extends Options implements IInputOutput {
     })
     public machineFriendly = false;
 
+    @option({
+        name: "no-open-urls",
+        description: "Disable URL-opening convenience",
+        toggle: true,
+    })
+    public dontAutoOpenUrls = false;
+
     public logError(error: any) {
         console.error(error);
     }
@@ -309,7 +316,7 @@ export class DeviceOptions extends DiscoveryOptions {
 
         const ps5 = new OauthCredentialRequester(
             this,
-            new CliOauthStrategy(this),
+            new CliOauthStrategy(this, !this.dontAutoOpenUrls),
         );
 
         return new DeviceTypeStrategyCredentialRequester({
