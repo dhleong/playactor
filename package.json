@@ -63,6 +63,7 @@
     "typescript": "^4.2.4"
   },
   "dependencies": {
+    "chalk": "^4.1.1",
     "clime": "^0.5.14",
     "debug": "^4.2.0",
     "fs-extra": "^9.1.0",

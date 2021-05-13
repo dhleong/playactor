@@ -8,6 +8,7 @@ import {
 } from "clime";
 
 import { cli } from "../clime";
+import { getAppVersion } from "./about";
 
 export class DefaultOptions extends Options {
     @option({
@@ -24,8 +25,7 @@ export default class extends Command {
     public async execute(options: DefaultOptions) {
         /* eslint-disable no-console */
         if (options.showVersion) {
-            // eslint-disable-next-line global-require, @typescript-eslint/no-var-requires
-            const { version } = require("../../../package.json");
+            const version = getAppVersion();
             console.log(`playactor v${version}`);
             return;
         }
