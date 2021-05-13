@@ -1,15 +1,8 @@
 #!/usr/bin/env node
 
-import path from "path";
-import { CLI, Shim } from "clime";
+import { Shim } from "clime";
+import { cli } from "./clime";
 import { RootProxyDevice } from "./root-proxy-device";
-
-// The second parameter is the path to folder that contains command modules.
-const cli = new CLI("playactor", path.join(__dirname, "commands"));
-
-if (process.argv[0].endsWith("ts-node")) {
-    CLI.commandModuleExtension = ".ts";
-}
 
 // clime doesn't currently have a way to ignore or hide specific args,
 // so let's do it manually here:
