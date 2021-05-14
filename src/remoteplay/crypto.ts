@@ -3,6 +3,7 @@ import _debug from "debug";
 
 import { IDiscoveredDevice } from "../discovery/model";
 import { CryptoCodec } from "../socket/crypto-codec";
+import { redact } from "../util/redact";
 import { LegacyCryptoStrategy } from "./crypto/legacy";
 import { ModernCryptoStrategy } from "./crypto/modern";
 import { RemotePlayVersion, remotePlayVersionFor } from "./model";
@@ -66,9 +67,9 @@ export class RemotePlayCrypto {
         }
         const payload = Buffer.from(formatted, "utf-8");
 
-        debug("formatted record:\n", formatted);
-        debug("encrypting record:", payload.toString("hex"));
-        debug("preface:", this.preface);
+        debug("formatted record:\n", redact(formatted));
+        debug("encrypting record:", redact(payload.toString("hex")));
+        debug("preface:", redact(this.preface));
 
         const encodedPayload = this.codec.encode(payload);
         if (encodedPayload.length !== payload.length) {

@@ -11,6 +11,7 @@ import {
 } from "./discovery/model";
 import { StandardDiscoveryNetworkFactory } from "./discovery/standard";
 import { formatDiscoveryMessage } from "./protocol";
+import { redact } from "./util/redact";
 import { IWakerNetworkFactory } from "./waker/model";
 import { UdpWakerNetworkFactory } from "./waker/udp";
 
@@ -36,7 +37,7 @@ export class Waker {
         config: INetworkConfig = {},
     ) {
         if (device.status === DeviceStatus.AWAKE) {
-            debug("device", device, "is already awake");
+            debug("device", redact(device), "is already awake");
             return WakeResult.ALREADY_AWAKE;
         }
 
@@ -52,7 +53,7 @@ export class Waker {
                 type: "WAKEUP",
                 version: device.discoveryVersion,
             });
-            debug("sending:", message.toString("hex"));
+            debug("sending:", redact(message.toString("hex")));
             await network.sendTo(device, message);
 
             await this.deviceAwakened(device, config);
@@ -72,10 +73,10 @@ export class Waker {
             this.discoveryFactory,
         );
 
-        debug("waiting for ", device, "to become awake");
+        debug("waiting for ", redact(device), "to become awake");
         for await (const d of discovery.discover(config, { uniqueDevices: false })) {
             if (d.id === device.id && d.status === DeviceStatus.AWAKE) {
-                debug("received AWAKE status:", d);
+                debug("received AWAKE status:", redact(d));
                 return;
             }
         }

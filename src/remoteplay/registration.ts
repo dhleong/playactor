@@ -8,6 +8,7 @@ import {
 } from "../discovery/model";
 import { UdpDiscoveryNetworkFactory } from "../discovery/udp";
 import { delayMillis } from "../util/async";
+import { redact } from "../util/redact";
 import { RemotePlayCrypto } from "./crypto";
 import {
     RemotePlayVersion,
@@ -76,15 +77,15 @@ export class RemotePlayRegistration {
         const crypto = RemotePlayCrypto.forDeviceAndPin(device, credentials.pin);
         const body = this.createPayload(crypto, device, credentials);
 
-        debug("request body", body.toString("hex"));
-        debug("result length:", body.length);
+        debug("request body", redact(body.toString("hex")));
+        debug("request length:", body.length);
 
         const response = await this.sendRegistrationRequest(device, body);
         const decoded = crypto.decrypt(response);
-        debug("result decrypted:", decoded.toString("hex"));
+        debug("result decrypted:", redact(decoded.toString("hex")));
 
         const registration = parseBody<IDeviceRegistration>(decoded);
-        debug("registration map:", registration);
+        debug("registration map:", redact(registration));
 
         const rpKey = registration["RP-Key"];
         if (!rpKey || rpKey.length !== 2 * CRYPTO_NONCE_LENGTH) {

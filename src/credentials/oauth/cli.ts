@@ -28,6 +28,7 @@ export class CliOauthStrategy implements OauthStrategy {
             this.io.logInfo(`  ${url}`);
         }
 
+        this.io.logInfo("These URLs may contain sensitive information; if sharing debug logs anywhere, PLEASE make sure to redact them first!");
         return this.io.prompt("URL> ");
     }
 

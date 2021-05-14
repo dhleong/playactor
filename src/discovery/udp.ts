@@ -2,6 +2,7 @@ import _debug from "debug";
 import dgram from "dgram";
 
 import { formatDiscoveryMessage } from "../protocol";
+import { redact } from "../util/redact";
 import { parseMessage } from "./messages";
 
 import {
@@ -104,7 +105,7 @@ export class UdpDiscoveryNetwork implements IDiscoveryNetwork {
         message: Buffer,
     ) {
         debug(
-            "send:", message.toString("hex"), " to ",
+            "send:", redact(message.toString("hex")), " to ",
             recipientAddress, ":", recipientPort,
         );
         this.socket.send(message, recipientPort, recipientAddress);
@@ -186,7 +187,7 @@ export class UdpDiscoveryNetworkFactory implements IDiscoveryNetworkFactory {
     ) {
         return this.createMessages(config, message => {
             if (message.type === "DEVICE") {
-                debug("received device:", message);
+                debug("received device:", redact(message));
                 onDevice({
                     address: message.sender,
                     hostRequestPort: parseInt(message.data["host-request-port"], 10),

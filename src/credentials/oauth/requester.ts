@@ -5,6 +5,7 @@ import { IInputOutput } from "../../cli/io";
 import { IDiscoveredDevice } from "../../discovery/model";
 import { parseHexBytes } from "../../remoteplay/protocol";
 import { RemotePlayRegistration } from "../../remoteplay/registration";
+import { redact } from "../../util/redact";
 import { ICredentialRequester, ICredentials } from "../model";
 import { OauthStrategy } from "./model";
 
@@ -103,7 +104,7 @@ export class OauthCredentialRequester implements ICredentialRequester {
         }
 
         const accessToken = await this.exchangeCodeForAccess(code);
-        debug(`Fetched access token (${accessToken}); requesting account info`);
+        debug(`Fetched access token (${redact(accessToken)}); requesting account info`);
 
         const accountInfo: RawAccountInfo = await got(`${TOKEN_URL}/${accessToken}`, {
             username: CLIENT_ID,

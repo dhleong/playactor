@@ -6,6 +6,7 @@ import {
     IDeviceProtocol, IDeviceSocket, IPacket, IPacketReader,
 } from "../socket/model";
 import { LengthDelimitedBufferReader, TypedPacketReader } from "../socket/protocol/base";
+import { redact } from "../util/redact";
 import { errorReasonString } from "./model";
 import {
     RemotePlayCommand, RemotePlayIncomingPacket, RemotePlayOutgoingPacket, RemotePlayResponseType,
@@ -57,7 +58,7 @@ export async function request(url: string, options: Options) {
         debug("performing ", options.method ?? "GET", url);
         const withoutAgent = { ...options };
         delete withoutAgent.agent;
-        debug(withoutAgent);
+        debug(redact(withoutAgent));
     }
 
     const headers: Record<string, string | string[]> = {
@@ -69,7 +70,7 @@ export async function request(url: string, options: Options) {
         // or else get a 403 response for some reason
         headers["Content-Length"] = "0";
     }
-    debug("combined request headers:", headers);
+    debug("combined request headers:", redact(headers));
 
     const result = await got(url, {
         ...options,
@@ -79,8 +80,8 @@ export async function request(url: string, options: Options) {
         throwHttpErrors: false,
     } as OptionsOfBufferResponseBody);
 
-    debug("result headers:", result.headers);
-    debug("result body:", result.body.toString("base64"));
+    debug("result headers:", redact(result.headers));
+    debug("result body:", redact(result.body.toString("base64")));
 
     if (result.statusCode >= 300) {
         let message = `Registration error: ${result.statusCode}: ${result.statusMessage}`;
