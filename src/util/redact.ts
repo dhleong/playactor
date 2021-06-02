@@ -31,7 +31,7 @@ function redactRecord(record: Record<string, unknown>) {
             m[key] = redactRecord(value as Record<string, unknown>);
         }
         return m;
-    }, record);
+    }, { ...record });
 }
 
 /**
@@ -40,6 +40,9 @@ function redactRecord(record: Record<string, unknown>) {
  * records will also have redact() called on them); string values passed in
  * will always be completely redacted.  Arrays will have redact() called on
  * each value.
+ *
+ * Any collections passed to `redact` will be deep-copied, to avoid munging
+ * data that has yet to be sent across the wire.
  */
 export function redact(value: string): string;
 export function redact(value: Buffer): string;
