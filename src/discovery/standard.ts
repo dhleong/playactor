@@ -14,15 +14,19 @@ import {
 } from "./model";
 import { UdpDiscoveryNetworkFactory } from "./udp";
 
+export const StandardPS4DiscoveryNetworkFactory = new UdpDiscoveryNetworkFactory(
+    wakePortsByType[DeviceType.PS4],
+    DiscoveryVersions.PS4,
+);
+
+export const StandardPS5DiscoveryNetworkFactory = new UdpDiscoveryNetworkFactory(
+    wakePortsByType[DeviceType.PS5],
+    DiscoveryVersions.PS5,
+);
+
 const standardFactories = [
-    new UdpDiscoveryNetworkFactory(
-        wakePortsByType[DeviceType.PS4],
-        DiscoveryVersions.PS4,
-    ),
-    new UdpDiscoveryNetworkFactory(
-        wakePortsByType[DeviceType.PS5],
-        DiscoveryVersions.PS5,
-    ),
+    StandardPS4DiscoveryNetworkFactory,
+    StandardPS5DiscoveryNetworkFactory,
 ];
 
 export const StandardDiscoveryNetworkFactory: IDiscoveryNetworkFactory = {
