@@ -16,7 +16,11 @@ import {
     IDiscoveryNetworkFactory,
     INetworkConfig,
 } from "../discovery/model";
-import { StandardDiscoveryNetworkFactory } from "../discovery/standard";
+import {
+    StandardDiscoveryNetworkFactory,
+    StandardPS4DiscoveryNetworkFactory,
+    StandardPS5DiscoveryNetworkFactory
+} from "../discovery/standard";
 import { MimCredentialRequester } from "../credentials/mim-requester";
 import { DiskCredentialsStorage } from "../credentials/disk-storage";
 import { IConnectionConfig, IDevice } from "../device/model";
@@ -229,7 +233,14 @@ export class DeviceOptions extends DiscoveryOptions {
         const args = process.argv;
         const proxiedUserId = RootProxyDevice.extractProxiedUserId(args);
 
-        const networkFactory = StandardDiscoveryNetworkFactory;
+        const deviceType = this.requestedDeviceType;
+        const networkFactory =
+          deviceType == DeviceType.PS4
+            ? StandardPS4DiscoveryNetworkFactory
+            : deviceType == DeviceType.PS5
+            ? StandardPS5DiscoveryNetworkFactory
+            : StandardDiscoveryNetworkFactory;
+
         const diskCredentialsStorage = new DiskCredentialsStorage(
             this.credentialsPath,
         );
@@ -248,7 +259,11 @@ export class DeviceOptions extends DiscoveryOptions {
             description,
             predicate,
             networkConfig,
-            this.discoveryConfig,
+            {
+                ...this.discoveryConfig,
+                deviceIp: this.deviceIp,
+                deviceType: this.requestedDeviceType
+            },
             networkFactory,
             credentials,
         );

@@ -11,6 +11,8 @@ export interface IDiscoveryConfig {
     pingIntervalMillis: number;
     timeoutMillis: number;
     uniqueDevices: boolean;
+    deviceIp?: string;
+    deviceType?: DeviceType;
 }
 
 export const defaultDiscoveryConfig: IDiscoveryConfig = {
@@ -99,8 +101,9 @@ export type OnDiscoveryMessageHandler = (message: IDiscoveryMessage) => void;
 export interface IDiscoveryNetwork {
     close(): void;
 
-    /** Request devices on the network to identify themselves */
-    ping(): Promise<void>;
+    /** Request devices on the network to identify themselves. A specific
+      * `deviceIp` may be provided to instead talk to a specific device */
+    ping(deviceIp?: string): Promise<void>;
 
     send(
         recipientAddress: string,
