@@ -26,7 +26,7 @@ export class OskStartResultPacket extends IncomingResultPacket {
 
         this.oskType = data.readInt32LE(12);
         this.maxLength = data.readInt32LE(16);
-        this.initialContent = data.toString("UTF-16LE", 20);
+        this.initialContent = data.toString("utf16le", 20);
     }
 
     public get actionType() {
