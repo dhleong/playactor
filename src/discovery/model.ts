@@ -101,8 +101,9 @@ export type OnDiscoveryMessageHandler = (message: IDiscoveryMessage) => void;
 export interface IDiscoveryNetwork {
     close(): void;
 
-    /** Request devices on the network to identify themselves */
-    ping(deviceIp: string | undefined): Promise<void>;
+    /** Request devices on the network to identify themselves. A specific
+      * `deviceIp` may be provided to instead talk to a specific device */
+    ping(deviceIp?: string): Promise<void>;
 
     send(
         recipientAddress: string,

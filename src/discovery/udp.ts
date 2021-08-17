@@ -81,7 +81,7 @@ export class UdpDiscoveryNetwork implements IDiscoveryNetwork {
         this.socketManager.release(this.boundPort);
     }
 
-    public async ping(deviceIp: string | undefined) {
+    public async ping(deviceIp?: string) {
         return this.send(deviceIp ?? BROADCAST_ADDRESS, this.port, "SRCH");
     }
 
