@@ -19,7 +19,7 @@ import {
 import {
     StandardDiscoveryNetworkFactory,
     StandardPS4DiscoveryNetworkFactory,
-    StandardPS5DiscoveryNetworkFactory
+    StandardPS5DiscoveryNetworkFactory,
 } from "../discovery/standard";
 import { MimCredentialRequester } from "../credentials/mim-requester";
 import { DiskCredentialsStorage } from "../credentials/disk-storage";
@@ -233,13 +233,7 @@ export class DeviceOptions extends DiscoveryOptions {
         const args = process.argv;
         const proxiedUserId = RootProxyDevice.extractProxiedUserId(args);
 
-        const deviceType = this.requestedDeviceType;
-        const networkFactory =
-          deviceType == DeviceType.PS4
-            ? StandardPS4DiscoveryNetworkFactory
-            : deviceType == DeviceType.PS5
-            ? StandardPS5DiscoveryNetworkFactory
-            : StandardDiscoveryNetworkFactory;
+        const { requestedDeviceType: deviceType, networkFactory } = this;
 
         const diskCredentialsStorage = new DiskCredentialsStorage(
             this.credentialsPath,
@@ -262,7 +256,7 @@ export class DeviceOptions extends DiscoveryOptions {
             {
                 ...this.discoveryConfig,
                 deviceIp: this.deviceIp,
-                deviceType: this.requestedDeviceType
+                deviceType,
             },
             networkFactory,
             credentials,
@@ -299,6 +293,17 @@ export class DeviceOptions extends DiscoveryOptions {
                 passCode: this.passCode?.value ?? "",
             },
         };
+    }
+
+    public get networkFactory() {
+        const deviceType = this.requestedDeviceType;
+        if (deviceType === DeviceType.PS4) {
+            return StandardPS4DiscoveryNetworkFactory;
+        }
+        if (deviceType === DeviceType.PS5) {
+            return StandardPS5DiscoveryNetworkFactory;
+        }
+        return StandardDiscoveryNetworkFactory;
     }
 
     public get requestedDeviceType(): DeviceType | undefined {

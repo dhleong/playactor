@@ -43,7 +43,7 @@ export class Discovery {
             }
         });
 
-        const deviceIp = this.discoveryConfig.deviceIp;
+        const { deviceIp } = this.discoveryConfig;
         network.ping(deviceIp); // send an initial ping immediately
         const discoverInterval = setInterval(() => {
             debug("sending subsequent network discovery ping");
