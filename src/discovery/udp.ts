@@ -140,13 +140,17 @@ export class UdpDiscoveryNetworkFactory implements IDiscoveryNetworkFactory {
         onMessage: OnDiscoveryMessageHandler,
     ) {
         return this.createRawMessages(config, (buffer, rinfo) => {
-            const parsed = parseMessage(buffer);
-            onMessage({
-                type: parsed.type,
-                sender: rinfo,
-                version: this.version,
-                data: parsed,
-            });
+            try {
+                const parsed = parseMessage(buffer);
+                onMessage({
+                    type: parsed.type,
+                    sender: rinfo,
+                    version: this.version,
+                    data: parsed,
+                });
+            } catch (err) {
+                debug("failed to parse message:", err);
+            }
         });
     }
 
