@@ -53,6 +53,30 @@ export function parseBody<R>(body: Buffer): R {
     }, {} as any) as R;
 }
 
+export function remotePlayRequestError(
+    url: string,
+    method: string,
+    statusCode: number,
+    statusMessage: string,
+    reasonCode?: string,
+) {
+    const { pathname } = new URL(url);
+
+    let message = `Remote Play request failed: ${method} ${pathname}`
+        + `: ${statusCode}: ${statusMessage}`;
+
+    if (reasonCode) {
+        message += `: ${reasonCode}`;
+
+        const reason = errorReasonString(reasonCode);
+        if (reason) {
+            message += ` (${reason})`;
+        }
+    }
+
+    return new Error(message);
+}
+
 export async function request(url: string, options: Options) {
     if (debug.enabled) {
         debug("performing ", options.method ?? "GET", url);
@@ -84,19 +108,16 @@ export async function request(url: string, options: Options) {
     debug("result body:", redact(result.body.toString("base64")));
 
     if (result.statusCode >= 300) {
-        let message = `Registration error: ${result.statusCode}: ${result.statusMessage}`;
-
         const reasonCode = result.headers["rp-application-reason"];
-        if (reasonCode && !Array.isArray(reasonCode)) {
-            const reason = errorReasonString(reasonCode);
-            if (reason) {
-                message += `: ${reason}`;
-            }
-        }
 
-        throw new Error(message);
+        throw remotePlayRequestError(
+            url,
+            options.method ?? "GET",
+            result.statusCode,
+            result.statusMessage ?? "",
+            typeof reasonCode === "string" ? reasonCode : undefined,
+        );
     }
-
     return result;
 }
 
