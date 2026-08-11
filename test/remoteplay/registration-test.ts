@@ -1,8 +1,14 @@
 import * as chai from "chai";
+import * as FakeTimers from "@sinonjs/fake-timers";
+import * as sinon from "sinon";
+import sinonChai from "sinon-chai";
+
 import { DeviceType, IDiscoveredDevice } from "../../src/discovery/model";
+import { UdpDiscoveryNetworkFactory } from "../../src/discovery/udp";
 import { RemotePlayRegistration } from "../../src/remoteplay/registration";
 import { RemotePlayCrypto } from "../../src/remoteplay/crypto";
 
+chai.use(sinonChai);
 chai.should();
 
 function fakeDevice(type: DeviceType): IDiscoveredDevice {
@@ -36,5 +42,49 @@ describe("RemotePlayRegistration", () => {
 
         payload.toString("hex").length.should.deep.equal(expected.length);
         payload.toString("hex").should.deep.equal(expected);
+    });
+
+    it("closes the discovery network when registration search times out", async () => {
+        const clock = FakeTimers.install();
+        const close = sinon.spy();
+
+        const createRawMessages = sinon.stub(
+            UdpDiscoveryNetworkFactory.prototype,
+            "createRawMessages",
+        ).returns({
+            close,
+            sendBuffer: sinon.stub(),
+        } as any);
+
+        const registration = new RemotePlayRegistration();
+        const device = {
+            type: DeviceType.PS5,
+            address: {
+                address: "192.168.1.50",
+            },
+        } as any;
+
+        let timeoutError: Error | undefined;
+
+        const promise = (registration as any)
+            .searchForDevice(device)
+            .catch((e: Error) => {
+                timeoutError = e;
+            });
+
+        try {
+            await clock.tickAsync(30000);
+            await promise;
+
+            if (!timeoutError) {
+                throw new Error("Expected registration search to time out");
+            }
+
+            timeoutError.message.should.equal("Timeout");
+            close.should.have.been.calledOnce;
+        } finally {
+            createRawMessages.restore();
+            clock.uninstall();
+        }
     });
 });
