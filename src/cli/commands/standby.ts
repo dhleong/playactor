@@ -18,7 +18,13 @@ export default class extends Command {
             return;
         }
 
-        const connection = await device.openConnection(deviceSpec.connectionConfig);
+        // The console accepts Standby without a Remote Play login, and it
+        // never answers the login while the "not turned off properly"
+        // dialog is on screen, so skip it.
+        const connection = await device.openConnection({
+            ...deviceSpec.connectionConfig,
+            remotePlayLogin: false,
+        });
         try {
             await connection.standby();
         } finally {

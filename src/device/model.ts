@@ -11,6 +11,13 @@ export interface IConnectionConfig {
     socket?: ISocketConfig;
     network?: INetworkConfig;
     login?: Partial<ILoginConfig>;
+
+    /**
+     * Whether to log in after opening a Remote Play session. Defaults to
+     * `true`. Standby does not need it, and a console showing the
+     * "not turned off properly" dialog never answers the login request.
+     */
+    remotePlayLogin?: boolean;
 }
 
 export interface IDevice {

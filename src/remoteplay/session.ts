@@ -167,7 +167,9 @@ export async function openSession(
     const nonce = await initializeSession(device, creds);
     const socket = await openControlSocket(device, creds, nonce);
 
-    await socket.execute(new RemotePlayLoginProc(config));
+    if (config.remotePlayLogin !== false) {
+        await socket.execute(new RemotePlayLoginProc(config));
+    }
 
     debug("RemotePlaySession ready!");
     return socket;
