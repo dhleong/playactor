@@ -13,11 +13,18 @@ export interface IConnectionConfig {
     login?: Partial<ILoginConfig>;
 
     /**
-     * Whether to log in after opening a Remote Play session. Defaults to
-     * `true`. Standby does not need it, and a console showing the
-     * "not turned off properly" dialog never answers the login request.
+     * What the connection is opened for. Protocols may use it to skip
+     * steps the request does not need.
      */
-    remotePlayLogin?: boolean;
+    intent?: ConnectionIntent;
+}
+
+export enum ConnectionIntent {
+    STANDBY,
+    LOGIN,
+    REMOTE_CONTROL,
+    KEYBOARD,
+    START_TITLE,
 }
 
 export interface IDevice {
