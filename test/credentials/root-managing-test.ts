@@ -1,11 +1,13 @@
 import * as chai from "chai";
 import * as sinon from "sinon";
+import chaiAsPromised from "chai-as-promised";
 import sinonChai from "sinon-chai";
 
 import { ICredentialRequester } from "../../src/credentials/model";
 import { RootManagingCredentialRequester } from "../../src/credentials/root-managing";
 import { IDiscoveredDevice } from "../../src/discovery/model";
 
+chai.use(chaiAsPromised);
 chai.use(sinonChai);
 chai.should();
 
@@ -29,15 +31,9 @@ describe("RootManagingCredentialRequester", () => {
         const requester = new RootManagingCredentialRequester(delegate, 1000);
         const device = {} as IDiscoveredDevice;
 
-        let thrown: Error | undefined;
+        await requester.requestForDevice(device)
+            .should.be.rejectedWith(error);
 
-        try {
-            await requester.requestForDevice(device);
-        } catch (e) {
-            thrown = e as Error;
-        }
-
-        chai.expect(thrown).to.equal(error);
         setuid.should.have.been.calledOnceWith(1000);
     });
 });
