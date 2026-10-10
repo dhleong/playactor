@@ -1,13 +1,23 @@
 import * as chai from "chai";
 import * as FakeTimers from "@sinonjs/fake-timers";
 import * as sinon from "sinon";
+import chaiAsPromised from "chai-as-promised";
 import sinonChai from "sinon-chai";
 
-import { DeviceType, IDiscoveredDevice } from "../../src/discovery/model";
-import { UdpDiscoveryNetworkFactory } from "../../src/discovery/udp";
+import {
+    DeviceStatus,
+    DeviceType,
+    DiscoveryVersions,
+    IDiscoveredDevice,
+} from "../../src/discovery/model";
+import {
+    UdpDiscoveryNetwork,
+    UdpDiscoveryNetworkFactory,
+} from "../../src/discovery/udp";
 import { RemotePlayRegistration } from "../../src/remoteplay/registration";
 import { RemotePlayCrypto } from "../../src/remoteplay/crypto";
 
+chai.use(chaiAsPromised);
 chai.use(sinonChai);
 chai.should();
 
@@ -46,42 +56,45 @@ describe("RemotePlayRegistration", () => {
 
     it("closes the discovery network when registration search times out", async () => {
         const clock = FakeTimers.install();
-        const close = sinon.spy();
+        const network: UdpDiscoveryNetwork = Object.create(
+            UdpDiscoveryNetwork.prototype,
+        );
+        network.close = sinon.spy();
+        network.sendBuffer = sinon.stub();
 
         const createRawMessages = sinon.stub(
             UdpDiscoveryNetworkFactory.prototype,
             "createRawMessages",
-        ).returns({
-            close,
-            sendBuffer: sinon.stub(),
-        } as any);
+        ).returns(network);
 
         const registration = new RemotePlayRegistration();
-        const device = {
-            type: DeviceType.PS5,
+        const device: IDiscoveredDevice = {
             address: {
                 address: "192.168.1.50",
+                port: 9302,
+                family: "IPv4",
             },
-        } as any;
-
-        let timeoutError: Error | undefined;
-
-        const promise = (registration as any)
-            .searchForDevice(device)
-            .catch((e: Error) => {
-                timeoutError = e;
-            });
+            hostRequestPort: 997,
+            extras: {},
+            discoveryVersion: DiscoveryVersions.PS5,
+            systemVersion: "13600007",
+            id: "test-device",
+            name: "Test PS5",
+            status: DeviceStatus.AWAKE,
+            type: DeviceType.PS5,
+        };
 
         try {
+            const promise = registration.register(device, {
+                accountId: "AAAAAAAAAEI=",
+                pin: "13374201",
+            });
+            const rejection = promise.should.be.rejectedWith("Timeout");
+
             await clock.tickAsync(30000);
-            await promise;
 
-            if (!timeoutError) {
-                throw new Error("Expected registration search to time out");
-            }
-
-            timeoutError.message.should.equal("Timeout");
-            close.should.have.been.calledOnce;
+            await rejection;
+            network.close.should.have.been.calledOnce;
         } finally {
             createRawMessages.restore();
             clock.uninstall();
