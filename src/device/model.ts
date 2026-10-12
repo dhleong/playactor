@@ -11,6 +11,20 @@ export interface IConnectionConfig {
     socket?: ISocketConfig;
     network?: INetworkConfig;
     login?: Partial<ILoginConfig>;
+
+    /**
+     * What the connection is opened for. Protocols may use it to skip
+     * steps the request does not need.
+     */
+    intent?: ConnectionIntent;
+}
+
+export enum ConnectionIntent {
+    STANDBY,
+    LOGIN,
+    REMOTE_CONTROL,
+    KEYBOARD,
+    START_TITLE,
 }
 
 export interface IDevice {

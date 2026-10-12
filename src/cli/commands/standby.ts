@@ -1,4 +1,5 @@
 import { Command, command, metadata } from "clime";
+import { ConnectionIntent } from "../../device/model";
 import { DeviceStatus } from "../../discovery/model";
 
 import { DeviceOptions } from "../options";
@@ -18,7 +19,10 @@ export default class extends Command {
             return;
         }
 
-        const connection = await device.openConnection(deviceSpec.connectionConfig);
+        const connection = await device.openConnection({
+            ...deviceSpec.connectionConfig,
+            intent: ConnectionIntent.STANDBY,
+        });
         try {
             await connection.standby();
         } finally {

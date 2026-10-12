@@ -1,5 +1,7 @@
 import { Command, command, param } from "clime";
 
+import { ConnectionIntent } from "../../device/model";
+
 import { DeviceOptions } from "../options";
 
 @command({
@@ -20,7 +22,10 @@ export default class extends Command {
         deviceSpec: DeviceOptions,
     ) {
         const device = await deviceSpec.findDevice();
-        const connection = await device.openConnection(deviceSpec.connectionConfig);
+        const connection = await device.openConnection({
+            ...deviceSpec.connectionConfig,
+            intent: ConnectionIntent.KEYBOARD,
+        });
         try {
             if (!connection.openKeyboard) {
                 throw new Error("osk-submit not supported for this device");

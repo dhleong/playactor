@@ -5,6 +5,8 @@ import {
     param,
 } from "clime";
 
+import { ConnectionIntent } from "../../device/model";
+
 import { DeviceOptions } from "../options";
 
 class StartTitleOptions extends DeviceOptions {
@@ -29,7 +31,10 @@ export default class extends Command {
         deviceSpec: StartTitleOptions,
     ) {
         const device = await deviceSpec.findDevice();
-        const connection = await device.openConnection(deviceSpec.connectionConfig);
+        const connection = await device.openConnection({
+            ...deviceSpec.connectionConfig,
+            intent: ConnectionIntent.START_TITLE,
+        });
         try {
             if (!connection.startTitleId) {
                 throw new Error("start-id not supported for this device");
