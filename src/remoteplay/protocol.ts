@@ -84,14 +84,25 @@ export async function request(url: string, options: Options) {
     debug("result body:", redact(result.body.toString("base64")));
 
     if (result.statusCode >= 300) {
-        let message = `Registration error: ${result.statusCode}: ${result.statusMessage}`;
-
         const reasonCode = result.headers["rp-application-reason"];
-        if (reasonCode && !Array.isArray(reasonCode)) {
-            const reason = errorReasonString(reasonCode);
-            if (reason) {
-                message += `: ${reason}`;
-            }
+        const applicationReason = typeof reasonCode === "string"
+            ? errorReasonString(reasonCode)
+            : undefined;
+
+        debug("Remote Play HTTP request failed:", {
+            method: options.method ?? "GET",
+            url,
+            statusCode: result.statusCode,
+            statusMessage: result.statusMessage,
+            reasonCode,
+            applicationReason,
+        });
+
+        let message = `Remote Play request failed: ${result.statusCode}`
+            + ` ${result.statusMessage ?? ""}`;
+
+        if (applicationReason) {
+            message += `: ${applicationReason}`;
         }
 
         throw new Error(message);
