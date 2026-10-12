@@ -53,30 +53,6 @@ export function parseBody<R>(body: Buffer): R {
     }, {} as any) as R;
 }
 
-export function remotePlayRequestError(
-    url: string,
-    method: string,
-    statusCode: number,
-    statusMessage: string,
-    reasonCode?: string,
-) {
-    const { pathname } = new URL(url);
-
-    let message = `Remote Play request failed: ${method} ${pathname}`
-        + `: ${statusCode}: ${statusMessage}`;
-
-    if (reasonCode) {
-        message += `: ${reasonCode}`;
-
-        const reason = errorReasonString(reasonCode);
-        if (reason) {
-            message += ` (${reason})`;
-        }
-    }
-
-    return new Error(message);
-}
-
 export async function request(url: string, options: Options) {
     if (debug.enabled) {
         debug("performing ", options.method ?? "GET", url);
@@ -109,15 +85,29 @@ export async function request(url: string, options: Options) {
 
     if (result.statusCode >= 300) {
         const reasonCode = result.headers["rp-application-reason"];
+        const applicationReason = typeof reasonCode === "string"
+            ? errorReasonString(reasonCode)
+            : undefined;
 
-        throw remotePlayRequestError(
+        debug("Remote Play HTTP request failed:", {
+            method: options.method ?? "GET",
             url,
-            options.method ?? "GET",
-            result.statusCode,
-            result.statusMessage ?? "",
-            typeof reasonCode === "string" ? reasonCode : undefined,
-        );
+            statusCode: result.statusCode,
+            statusMessage: result.statusMessage,
+            reasonCode,
+            applicationReason,
+        });
+
+        let message = `Remote Play request failed: ${result.statusCode}`
+            + ` ${result.statusMessage ?? ""}`;
+
+        if (applicationReason) {
+            message += `: ${applicationReason}`;
+        }
+
+        throw new Error(message);
     }
+
     return result;
 }
 
