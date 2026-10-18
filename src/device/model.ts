@@ -12,10 +12,7 @@ export interface IConnectionConfig {
     network?: INetworkConfig;
     login?: Partial<ILoginConfig>;
 
-    /**
-     * What the connection is opened for. Protocols may use it to skip
-     * steps the request does not need.
-     */
+    /** Defaults to `ConnectionIntent.LOGIN` when omitted. */
     intent?: ConnectionIntent;
 }
 
