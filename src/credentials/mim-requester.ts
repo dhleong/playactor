@@ -2,15 +2,25 @@ import _debug from "debug";
 import { IInputOutput } from "../cli/io";
 
 import {
+    DeviceType,
     IDiscoveredDevice,
     IDiscoveryMessage,
     IDiscoveryNetwork,
     IDiscoveryNetworkFactory,
     INetworkConfig,
 } from "../discovery/model";
+import { formatDiscoveryMessage } from "../protocol";
 import { CancellableAsyncSink } from "../util/async";
 import { wakePortsByType } from "../waker/udp";
 import { ICredentialRequester, ICredentials } from "./model";
+
+/**
+ * The host-request-port that real devices advertise in their discovery
+ * responses, which the official apps expect to see from us as well.
+ */
+const requestPortsByType: Partial<Record<DeviceType, number>> = {
+    [DeviceType.PS4]: 997,
+};
 
 export interface IEmulatorOptions {
     hostId: string;
@@ -52,6 +62,11 @@ export class MimCredentialRequester implements ICredentialRequester {
             throw new Error(`Unexpected discovery protocol: ${device.discoveryVersion}`);
         }
 
+        const hostRequestPort = requestPortsByType[device.type];
+        if (!hostRequestPort) {
+            throw new Error(`Unexpected device type: ${device.type}`);
+        }
+
         const network = this.networkFactory.createMessages({
             ...this.networkConfig,
             localBindPort,
@@ -70,34 +85,44 @@ export class MimCredentialRequester implements ICredentialRequester {
         return this.emulateUntilWoken(
             sink,
             network,
-            device.type,
-            localBindPort,
+            device,
+            hostRequestPort,
         );
     }
 
     private async emulateUntilWoken(
         incomingMessages: AsyncIterable<IDiscoveryMessage>,
         network: IDiscoveryNetwork,
-        hostType: string,
-        localBindPort: number,
+        device: IDiscoveredDevice,
+        hostRequestPort: number,
     ) {
-        const searchStatus = "HTTP/1.1 620 Server Standby";
-        const searchResponse = {
-            "host-id": this.emulatorOptions.hostId,
-            "host-name": this.emulatorOptions.hostName,
-            "host-request-port": localBindPort,
-            "host-type": hostType,
-        };
+        // NOTE: formatted here rather than via network.send(), which would
+        // send one response per discovery protocol version when the network
+        // is a composite, advertising the wrong version for the device type
+        const searchResponse = formatDiscoveryMessage({
+            type: "HTTP/1.1 620 Server Standby",
+            version: device.discoveryVersion,
+            data: {
+                "host-id": this.emulatorOptions.hostId,
+                "host-name": this.emulatorOptions.hostName,
+                "host-request-port": hostRequestPort,
+                "host-type": device.type,
+
+                // the official apps ignore devices without a system-version,
+                // so we borrow the one of the device we're requesting
+                // credentials for
+                "system-version": device.systemVersion,
+            },
+        });
 
         for await (const message of incomingMessages) {
             const { sender } = message;
             switch (message.type) {
                 case "SRCH":
                     debug("respond to SRCH request from", sender);
-                    await network.send(
+                    await network.sendBuffer(
                         sender.address,
                         sender.port,
-                        searchStatus,
                         searchResponse,
                     );
                     break;

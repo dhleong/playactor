@@ -17,5 +17,9 @@ export function formatDiscoveryMessage({
         }
     }
 
-    return Buffer.from(`${type} * HTTP/1.1\n${formatted}device-discovery-protocol-version:${version}\n`);
+    const firstLine = type.startsWith("HTTP")
+        ? type
+        : `${type} * HTTP/1.1`;
+
+    return Buffer.from(`${firstLine}\n${formatted}device-discovery-protocol-version:${version}\n`);
 }
