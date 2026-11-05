@@ -1,4 +1,5 @@
 import { Command, command, params } from "clime";
+import { ConnectionIntent } from "../../device/model";
 import { KeyPress } from "../../socket/proc/remote-control";
 import { RemoteOperation } from "../../socket/remote";
 
@@ -62,7 +63,10 @@ export default class extends Command {
     ) {
         const keyPresses = parseKeys(keys);
         const device = await deviceSpec.findDevice();
-        const connection = await device.openConnection(deviceSpec.connectionConfig);
+        const connection = await device.openConnection({
+            ...deviceSpec.connectionConfig,
+            intent: ConnectionIntent.REMOTE_CONTROL,
+        });
         try {
             if (!connection.sendKeys) {
                 throw new Error("send-keys not supported for this device");
