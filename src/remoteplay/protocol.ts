@@ -98,8 +98,11 @@ export async function request(url: string, options: Options) {
             applicationReason,
         });
 
-        let message = `Remote Play request failed: ${result.statusCode}`
-            + ` ${result.statusMessage ?? ""}`;
+        let message = `Remote Play request failed: ${result.statusCode}`;
+
+        if (result.statusMessage) {
+            message += ` ${result.statusMessage}`;
+        }
 
         if (applicationReason) {
             message += `: ${applicationReason}`;
