@@ -5,7 +5,12 @@ import sinon from "sinon";
 import { RemotePlayDeviceConnection } from "../../src/connection/remoteplay";
 import { IRemotePlayCredentials } from "../../src/credentials/model";
 import { ConnectionIntent } from "../../src/device/model";
-import { DeviceType, IDiscoveredDevice } from "../../src/discovery/model";
+import {
+    DeviceStatus,
+    DeviceType,
+    DiscoveryVersions,
+    IDiscoveredDevice,
+} from "../../src/discovery/model";
 import { RemotePlayPacketCodec } from "../../src/remoteplay/codec";
 import { pickCryptoStrategyForDevice } from "../../src/remoteplay/crypto";
 import { RemotePlayCommand } from "../../src/remoteplay/packets";
@@ -64,14 +69,31 @@ describe("Remote Play session", () => {
     });
 
     it("sends Standby without logging in", async () => {
-        const device = {
-            type: DeviceType.PS5,
-            systemVersion: "14100003",
+        const device: IDiscoveredDevice = {
             address: { address: "127.0.0.1", port: 9295, family: "IPv4" },
-        } as IDiscoveredDevice;
-        const creds = {
-            registration: { "PS5-RegistKey": REGIST_KEY, "RP-Key": REGIST_KEY },
-        } as unknown as IRemotePlayCredentials;
+            hostRequestPort: 997,
+            extras: {},
+            discoveryVersion: DiscoveryVersions.PS5,
+            systemVersion: "14100003",
+            id: "0123456789AB",
+            name: "PS5",
+            status: DeviceStatus.AWAKE,
+            type: DeviceType.PS5,
+        };
+        const creds: IRemotePlayCredentials = {
+            "app-type": "r",
+            "auth-type": "R",
+            "client-type": "vr",
+            "user-credential": "1234567890",
+            accountId: "1234567890",
+            registration: {
+                "AP-Bssid": "0123456789ab",
+                "AP-Name": "PS5",
+                "PS5-RegistKey": REGIST_KEY,
+                "RP-KeyType": "2",
+                "RP-Key": REGIST_KEY,
+            },
+        };
 
         const nonce = Buffer.alloc(16, 0x42);
         const serverCodec = new RemotePlayPacketCodec(
@@ -85,6 +107,7 @@ describe("Remote Play session", () => {
         const request = sinon.stub(protocol, "request");
         request.onFirstCall().resolves({
             headers: { "rp-nonce": nonce.toString("base64") },
+            request: { socket },
         } as any);
         request.onSecondCall().resolves({
             headers: { "rp-server-type": serverType.toString("base64") },
@@ -96,6 +119,7 @@ describe("Remote Play session", () => {
         }, creds);
         await new RemotePlayDeviceConnection(session).standby();
 
+        // Must not have sent Login:
         socket.commands.should.deep.equal([RemotePlayCommand.Standby]);
     });
 });
