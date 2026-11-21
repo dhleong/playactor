@@ -1,4 +1,5 @@
 import _debug from "debug";
+import http from "http";
 import net from "net";
 
 import { IRemotePlayCredentials } from "../credentials/model";
@@ -7,7 +8,6 @@ import { IDiscoveredDevice } from "../discovery/model";
 import { TcpDeviceSocket } from "../socket/tcp";
 import { delayMillis } from "../util/async";
 import { RemotePlayPacketCodec } from "./codec";
-import { parseControlResponse } from "./control-response";
 import { pickCryptoStrategyForDevice } from "./crypto";
 import { RemotePlayVersion, remotePlayVersionFor, remotePlayVersionToString } from "./model";
 import { RemotePlayLoginProc } from "./proc/login";
@@ -16,7 +16,6 @@ import {
     padBuffer,
     parseHexBytes,
     RemotePlayDeviceProtocol, request, typedPath, urlWith,
-    REST_PORT,
 } from "./protocol";
 
 const debug = _debug("playactor:remoteplay:session");
@@ -26,14 +25,10 @@ const DID_PREFIX = Buffer.from([
 ]);
 const DID_SUFFIX = Buffer.from([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
 const OS_TYPE = "Win10.0.0";
-
-const CONTROL_CONNECT_TIMEOUT = 15_000;
+const CONTROL_TIMEOUT_MS = 15_000;
 
 /**
- * Step 1: initialize the session and fetch the server nonce.
- *
- * This is an ordinary HTTP request. The connection is not needed
- * after the response, so the existing HTTP client can handle it.
+ * Step 1: initialize the session and fetch the "server nonce" value
  */
 async function initializeSession(
     device: IDiscoveredDevice,
@@ -41,7 +36,7 @@ async function initializeSession(
 ) {
     const version = remotePlayVersionFor(device);
     const path = version < RemotePlayVersion.PS4_10
-        ? "/sce/rp/session"
+        ? "/sce/rp/session" // PS4 with system version < 8.0
         : typedPath(device, "/sie/:type/rp/sess/init");
 
     const registKey = creds.registration["PS5-RegistKey"]
@@ -71,32 +66,20 @@ async function initializeSession(
     return nonce;
 }
 
-function controlPathFor(device: IDiscoveredDevice) {
+function urlFor(device: IDiscoveredDevice) {
     const version = remotePlayVersionFor(device);
-
-    return version < RemotePlayVersion.PS4_10
-        ? "/sce/rp/session/ctrl"
+    const path = version < RemotePlayVersion.PS4_10
+        ? "/sce/rp/session/ctrl" // PS4 with system version < 8.0
         : typedPath(device, "/sie/:type/rp/sess/ctrl");
+
+    return urlWith(device, path);
 }
 
-/**
- * Step 2: establish the Remote Play control connection.
- *
- * The control endpoint starts with HTTP but continues using a
- * binary protocol over the same TCP connection.
- *
- * A normal HTTP client can return the connection to its agent,
- * unreference it or destroy it after the HTTP response finishes.
- *
- * Use a dedicated TCP socket instead. Read only the HTTP headers,
- * preserve any binary data received with them, and hand the socket
- * directly to TcpDeviceSocket.
- */
 async function openControlSocket(
     device: IDiscoveredDevice,
     creds: IRemotePlayCredentials,
     nonce: Buffer,
-): Promise<TcpDeviceSocket> {
+) {
     const codec = new RemotePlayPacketCodec(
         pickCryptoStrategyForDevice(device),
         creds,
@@ -109,6 +92,8 @@ async function openControlSocket(
         throw new Error("Missing RegistKey?");
     }
 
+    // "device ID"? Seems to just be random bytes with some
+    // prefix and suffix
     const did = Buffer.concat([
         DID_PREFIX,
         Buffer.alloc(16),
@@ -120,9 +105,6 @@ async function openControlSocket(
     }
 
     const version = remotePlayVersionFor(device);
-
-    // Preserve the original encryption order. These calls advance
-    // the Remote Play encryption counter.
     const headers: Record<string, string> = {
         "RP-Auth": encrypt(padBuffer(parseHexBytes(registKey), CRYPTO_NONCE_LENGTH)),
         "RP-Version": remotePlayVersionToString(version),
@@ -141,33 +123,25 @@ async function openControlSocket(
         headers["RP-StreamingType"] = encrypt(typeBuffer);
     }
 
-    const host = device.address.address;
-    const path = controlPathFor(device);
-
-    const requestLines = [
-        `GET ${path} HTTP/1.1`,
-        `Host: ${host}:${REST_PORT}`,
-        "User-Agent: remoteplay Windows",
-        "Connection: keep-alive",
-        ...Object.keys(headers).map(name => `${name}: ${headers[name]}`),
-        "Content-Length: 0",
-        "",
-        "",
-    ];
-
-    const requestText = requestLines.join("\r\n");
-
-    debug("sending session control request...");
+    const agent = new http.Agent({
+        keepAlive: true,
+        maxSockets: 1,
+    });
 
     return new Promise<TcpDeviceSocket>((resolve, reject) => {
-        const stream = net.createConnection({
-            host,
-            port: REST_PORT,
-        });
-
-        let received = Buffer.alloc(0);
+        let stream: net.Socket | undefined;
         let finished = false;
-        let cleanup: () => void;
+
+        const controlRequest = http.request(urlFor(device), {
+            method: "GET",
+            agent,
+            headers: {
+                "User-Agent": "remoteplay Windows",
+                Connection: "keep-alive",
+                ...headers,
+                "Content-Length": "0",
+            },
+        });
 
         function fail(error: Error) {
             if (finished) {
@@ -175,133 +149,109 @@ async function openControlSocket(
             }
 
             finished = true;
-            cleanup();
-            stream.destroy();
+            controlRequest.destroy();
+            stream?.destroy();
+            agent.destroy();
             reject(error);
         }
 
-        function onConnect() {
-            debug("session control TCP connection established");
-            stream.write(requestText);
-        }
+        controlRequest.once("socket", socket => {
+            stream = socket;
+            socket.emit("agentRemove");
+        });
 
-        function onError(error: Error) {
-            fail(error);
-        }
-
-        function onEnd() {
-            fail(new Error(
-                "Remote Play console closed the session control connection before responding",
-            ));
-        }
-
-        function onClose() {
-            fail(new Error(
-                "Remote Play session control connection closed unexpectedly",
-            ));
-        }
-
-        function onTimeout() {
-            fail(new Error(
-                "Timed out waiting for the Remote Play session control response",
-            ));
-        }
-
-        function onData(data: Buffer) {
-            if (finished) {
+        controlRequest.once("response", response => {
+            if (response.statusCode !== 200) {
+                fail(new Error(
+                    `Remote Play control HTTP ${response.statusCode}`,
+                ));
                 return;
             }
 
-            received = Buffer.concat([received, data]);
+            const serverType = response.headers["rp-server-type"];
 
-            try {
-                const response = parseControlResponse(received);
+            if (typeof serverType !== "string") {
+                fail(new Error("Missing Remote Play RP-Server-Type header"));
+                return;
+            }
 
-                if (!response) {
+            if (response.headers["content-length"] !== "0") {
+                fail(new Error("Unexpected Remote Play HTTP response framing"));
+                return;
+            }
+
+            response.once("error", fail);
+            response.on("data", () => {
+                fail(new Error("Unexpected HTTP control response body"));
+            });
+
+            response.once("end", () => {
+                if (finished) {
                     return;
                 }
 
-                // Stop reading while the socket changes ownership.
-                stream.pause();
-
-                const serverType = codec.decodeBuffer(
-                    Buffer.from(response.encryptedServerType, "base64"),
-                );
-
-                debug("received server type=", serverType);
-
-                // Preserve binary packets received alongside HTTP headers.
-                if (response.remainingData.length > 0) {
-                    debug(
-                        "preserving",
-                        response.remainingData.length,
-                        "bytes received after HTTP headers",
-                    );
-                    stream.unshift(response.remainingData);
+                if (!stream || stream.destroyed) {
+                    fail(new Error("Control socket closed before handover"));
+                    return;
                 }
 
-                // Remove only the HTTP-handshake listeners.
-                cleanup();
+                stream.pause();
 
-                const connection = new TcpDeviceSocket(
-                    device,
-                    RemotePlayDeviceProtocol,
-                    stream,
-                    { refSocket: true },
-                    codec,
-                );
+                if (stream.listenerCount("data") !== 0) {
+                    fail(new Error("HTTP parser still owns the control socket"));
+                    return;
+                }
 
-                finished = true;
+                try {
+                    const serverTypeDecoded = codec.decodeBuffer(
+                        Buffer.from(serverType, "base64"),
+                    );
 
-                debug("session control socket handed over to Remote Play");
+                    debug("received server type=", serverTypeDecoded);
 
-                // TcpDeviceSocket now owns incoming binary packets.
-                stream.resume();
+                    stream.setTimeout(0);
 
-                resolve(connection);
-            } catch (error) {
-                fail(error instanceof Error
-                    ? error
-                    : new Error(String(error)));
-            }
-        }
+                    const connection = new TcpDeviceSocket(
+                        device,
+                        RemotePlayDeviceProtocol,
+                        stream,
+                        { refSocket: true },
+                        codec,
+                    );
 
-        cleanup = () => {
-            stream.removeListener("connect", onConnect);
-            stream.removeListener("data", onData);
-            stream.removeListener("error", onError);
-            stream.removeListener("end", onEnd);
-            stream.removeListener("close", onClose);
-            stream.removeListener("timeout", onTimeout);
-            stream.setTimeout(0);
-        };
+                    finished = true;
+                    stream.resume();
+                    resolve(connection);
+                } catch (error) {
+                    fail(error instanceof Error
+                        ? error
+                        : new Error(String(error)));
+                }
+            });
 
-        stream.once("connect", onConnect);
-        stream.on("data", onData);
-        stream.once("error", onError);
-        stream.once("end", onEnd);
-        stream.once("close", onClose);
-        stream.once("timeout", onTimeout);
+            response.resume();
+        });
 
-        stream.setTimeout(CONTROL_CONNECT_TIMEOUT);
+        controlRequest.once("error", fail);
+
+        controlRequest.setTimeout(CONTROL_TIMEOUT_MS, () => {
+            fail(new Error(
+                "Timed out waiting for the Remote Play control response",
+            ));
+        });
+
+        controlRequest.end();
     });
 }
 
-/**
- * Step 3: authenticate the Remote Play session.
- */
 export async function openSession(
     device: IDiscoveredDevice,
     config: IConnectionConfig,
     creds: IRemotePlayCredentials,
 ) {
     const nonce = await initializeSession(device, creds);
-
-    // Allow the console to release the initial HTTP connection.
-    // This delay resolved the TCP connection reset under Node.js 24.
-    debug("waiting 200ms before opening session control connection...");
-    await delayMillis(200);
-
+    // Avoid racing the console immediately after session init.
+    await delayMillis(1);
     const socket = await openControlSocket(device, creds, nonce);
 
     await socket.execute(new RemotePlayLoginProc(config));
