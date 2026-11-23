@@ -1,5 +1,7 @@
 import { Command, command, metadata } from "clime";
 
+import { ConnectionIntent } from "../../device/model";
+
 import { DeviceOptions } from "../options";
 
 @command({
@@ -12,7 +14,10 @@ export default class extends Command {
     ) {
         const device = await deviceSpec.findDevice();
         // TODO clear credentials?
-        const conn = await device.openConnection(deviceSpec.connectionConfig);
+        const conn = await device.openConnection({
+            ...deviceSpec.connectionConfig,
+            intent: ConnectionIntent.LOGIN,
+        });
         await conn.close();
     }
 }
