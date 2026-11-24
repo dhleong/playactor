@@ -21,7 +21,7 @@ export default class extends Command {
             options.discoveryConfig,
         );
 
-        for await (const device of discovery.discover()) {
+        for await (const device of discovery.discover(options.networkConfig)) {
             options.logResult(device);
         }
     }

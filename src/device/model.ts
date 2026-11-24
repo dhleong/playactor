@@ -11,6 +11,17 @@ export interface IConnectionConfig {
     socket?: ISocketConfig;
     network?: INetworkConfig;
     login?: Partial<ILoginConfig>;
+
+    /** Defaults to `ConnectionIntent.LOGIN` when omitted. */
+    intent?: ConnectionIntent;
+}
+
+export enum ConnectionIntent {
+    STANDBY,
+    LOGIN,
+    REMOTE_CONTROL,
+    KEYBOARD,
+    START_TITLE,
 }
 
 export interface IDevice {

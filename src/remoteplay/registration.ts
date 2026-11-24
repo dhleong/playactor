@@ -115,7 +115,10 @@ export class RemotePlayRegistration {
                 }
             });
 
-            timeout = setTimeout(() => reject(new Error("Timeout")), 30000);
+            timeout = setTimeout(() => {
+                net.close();
+                reject(new Error("Timeout"));
+            }, 30000);
 
             net.sendBuffer(device.address.address, REGISTRATION_PORT, Buffer.from(type));
         });

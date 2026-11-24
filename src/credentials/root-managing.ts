@@ -25,13 +25,13 @@ export class RootManagingCredentialRequester implements ICredentialRequester {
             throw new RootMissingError(`No credentials for ${device.name} and unable to request (need root permissions).`);
         }
 
-        const result = await this.delegate.requestForDevice(device);
-
-        if (process.setuid && this.restoreUserId) {
-            process.setuid(this.restoreUserId);
-            debug("Restored user ID to:", this.restoreUserId);
+        try {
+            return await this.delegate.requestForDevice(device);
+        } finally {
+            if (process.setuid && this.restoreUserId) {
+                process.setuid(this.restoreUserId);
+                debug("Restored user ID to:", this.restoreUserId);
+            }
         }
-
-        return result;
     }
 }

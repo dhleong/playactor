@@ -3,7 +3,7 @@ import http from "http";
 import net from "net";
 
 import { IRemotePlayCredentials } from "../credentials/model";
-import { IConnectionConfig } from "../device/model";
+import { ConnectionIntent, IConnectionConfig } from "../device/model";
 import { IDiscoveredDevice } from "../discovery/model";
 import { TcpDeviceSocket } from "../socket/tcp";
 import { delayMillis } from "../util/async";
@@ -254,7 +254,12 @@ export async function openSession(
     await delayMillis(1);
     const socket = await openControlSocket(device, creds, nonce);
 
-    await socket.execute(new RemotePlayLoginProc(config));
+    // The console accepts Standby without a login, and it never answers
+    // the login request while it shows the "not turned off properly"
+    // dialog after a power loss, so a standby session skips it.
+    if (config.intent !== ConnectionIntent.STANDBY) {
+        await socket.execute(new RemotePlayLoginProc(config));
+    }
 
     debug("RemotePlaySession ready!");
     return socket;
