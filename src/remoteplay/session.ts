@@ -25,7 +25,7 @@ const DID_PREFIX = Buffer.from([
 ]);
 const DID_SUFFIX = Buffer.from([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
 const OS_TYPE = "Win10.0.0";
-const CONTROL_TIMEOUT_MS = 15_000;
+const CONTROL_TIMEOUT_MS = 30_000;
 
 /**
  * Step 1: initialize the session and fetch the "server nonce" value
@@ -75,64 +75,29 @@ function urlFor(device: IDiscoveredDevice) {
     return urlWith(device, path);
 }
 
-async function openControlSocket(
-    device: IDiscoveredDevice,
-    creds: IRemotePlayCredentials,
-    nonce: Buffer,
-) {
-    const codec = new RemotePlayPacketCodec(
-        pickCryptoStrategyForDevice(device),
-        creds,
-        nonce,
-    );
+interface IControlHandshake {
+    socket: net.Socket;
+    serverType: string;
+}
 
-    const registKey = creds.registration["PS5-RegistKey"]
-        ?? creds.registration["PS4-RegistKey"];
-    if (!registKey) {
-        throw new Error("Missing RegistKey?");
-    }
-
-    // "device ID"? Seems to just be random bytes with some
-    // prefix and suffix
-    const did = Buffer.concat([
-        DID_PREFIX,
-        Buffer.alloc(16),
-        DID_SUFFIX,
-    ]);
-
-    function encrypt(data: Buffer) {
-        return codec.encodeBuffer(data).toString("base64");
-    }
-
-    const version = remotePlayVersionFor(device);
-    const headers: Record<string, string> = {
-        "RP-Auth": encrypt(padBuffer(parseHexBytes(registKey), CRYPTO_NONCE_LENGTH)),
-        "RP-Version": remotePlayVersionToString(version),
-        "RP-Did": encrypt(did),
-        "RP-ControllerType": "3",
-        "RP-ClientType": "11",
-        "RP-OSType": encrypt(Buffer.from(OS_TYPE, "utf-8")),
-        "RP-ConPath": "1",
-    };
-
-    if (version >= RemotePlayVersion.PS4_10) {
-        headers["RP-StartBitrate"] = encrypt(Buffer.alloc(4, 0));
-
-        const typeBuffer = Buffer.alloc(4, 0);
-        typeBuffer.writeInt32LE(1);
-        headers["RP-StreamingType"] = encrypt(typeBuffer);
-    }
-
+/**
+ * Complete the HTTP control handshake and return a paused socket.
+ * The caller becomes responsible for the socket after handover.
+ */
+function requestControlSocket(
+    url: string,
+    headers: Record<string, string>,
+): Promise<IControlHandshake> {
     const agent = new http.Agent({
         keepAlive: true,
         maxSockets: 1,
     });
 
-    return new Promise<TcpDeviceSocket>((resolve, reject) => {
+    return new Promise<IControlHandshake>((resolve, reject) => {
         let stream: net.Socket | undefined;
         let finished = false;
 
-        const controlRequest = http.request(urlFor(device), {
+        const controlRequest = http.request(url, {
             method: "GET",
             agent,
             headers: {
@@ -203,25 +168,14 @@ async function openControlSocket(
                 }
 
                 try {
-                    const serverTypeDecoded = codec.decodeBuffer(
-                        Buffer.from(serverType, "base64"),
-                    );
-
-                    debug("received server type=", serverTypeDecoded);
-
                     stream.setTimeout(0);
 
-                    const connection = new TcpDeviceSocket(
-                        device,
-                        RemotePlayDeviceProtocol,
-                        stream,
-                        { refSocket: true },
-                        codec,
-                    );
+                    // agentRemove detached this socket from the agent.
+                    // Destroying the agent must not close the handed-over socket.
+                    agent.destroy();
 
                     finished = true;
-                    stream.resume();
-                    resolve(connection);
+                    resolve({ socket: stream, serverType });
                 } catch (error) {
                     fail(error instanceof Error
                         ? error
@@ -242,6 +196,82 @@ async function openControlSocket(
 
         controlRequest.end();
     });
+}
+
+async function openControlSocket(
+    device: IDiscoveredDevice,
+    creds: IRemotePlayCredentials,
+    nonce: Buffer,
+) {
+    const codec = new RemotePlayPacketCodec(
+        pickCryptoStrategyForDevice(device),
+        creds,
+        nonce,
+    );
+
+    const registKey = creds.registration["PS5-RegistKey"]
+        ?? creds.registration["PS4-RegistKey"];
+    if (!registKey) {
+        throw new Error("Missing RegistKey?");
+    }
+
+    // "device ID"? Seems to just be random bytes with some
+    // prefix and suffix
+    const did = Buffer.concat([
+        DID_PREFIX,
+        Buffer.alloc(16),
+        DID_SUFFIX,
+    ]);
+
+    function encrypt(data: Buffer) {
+        return codec.encodeBuffer(data).toString("base64");
+    }
+
+    const version = remotePlayVersionFor(device);
+    const headers: Record<string, string> = {
+        "RP-Auth": encrypt(padBuffer(parseHexBytes(registKey), CRYPTO_NONCE_LENGTH)),
+        "RP-Version": remotePlayVersionToString(version),
+        "RP-Did": encrypt(did),
+        "RP-ControllerType": "3",
+        "RP-ClientType": "11",
+        "RP-OSType": encrypt(Buffer.from(OS_TYPE, "utf-8")),
+        "RP-ConPath": "1",
+    };
+
+    if (version >= RemotePlayVersion.PS4_10) {
+        headers["RP-StartBitrate"] = encrypt(Buffer.alloc(4, 0));
+
+        const typeBuffer = Buffer.alloc(4, 0);
+        typeBuffer.writeInt32LE(1);
+        headers["RP-StreamingType"] = encrypt(typeBuffer);
+    }
+
+    const { socket, serverType } = await requestControlSocket(
+        urlFor(device),
+        headers,
+    );
+
+    try {
+        const serverTypeDecoded = codec.decodeBuffer(
+            Buffer.from(serverType, "base64"),
+        );
+
+        debug("received server type=", serverTypeDecoded);
+
+        const connection = new TcpDeviceSocket(
+            device,
+            RemotePlayDeviceProtocol,
+            socket,
+            { refSocket: true },
+            codec,
+        );
+
+        socket.resume();
+        return connection;
+    } catch (error) {
+        socket.destroy();
+        throw error;
+    }
 }
 
 export async function openSession(

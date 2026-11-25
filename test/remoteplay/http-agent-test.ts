@@ -1,4 +1,5 @@
 import * as chai from "chai";
+import http from "http";
 import net from "net";
 import sinon from "sinon";
 
@@ -57,7 +58,7 @@ function fixture() {
     return { device, credentials, nonce };
 }
 
-async function startConsole(response: string) {
+async function startConsole(response: string, closeAfterResponse = false) {
     const sockets = new Set<net.Socket>();
     let requestText = "";
     let firstBinary: Buffer | undefined;
@@ -109,6 +110,9 @@ async function startConsole(response: string) {
             requestComplete = true;
             requestText = buffer.subarray(0, end + 4).toString("latin1");
             socket.write(response);
+            if (closeAfterResponse) {
+                socket.end();
+            }
         });
     });
 
@@ -165,6 +169,7 @@ describe("Remote Play HTTP-agent handover", function httpAgentHandover() {
 
     it("hands a client-first binary exchange to TcpDeviceSocket", async () => {
         const { device, credentials, nonce } = fixture();
+        const destroyAgent = sinon.spy(http.Agent.prototype, "destroy");
 
         const serverCodec = new RemotePlayPacketCodec(
             pickCryptoStrategyForDevice(device),
@@ -198,8 +203,15 @@ describe("Remote Play HTTP-agent handover", function httpAgentHandover() {
             connection = await openSession(device, {}, credentials);
 
             chai.expect(connection.isConnected).to.equal(true);
+            chai.expect(destroyAgent.calledOnce).to.equal(true);
             chai.expect(server.getRequest()).to.include(
                 "GET /sie/ps5/rp/sess/ctrl HTTP/1.1",
+            );
+            chai.expect(server.getRequest()).to.match(
+                /\r\ncontent-length: 0\r\n/i,
+            );
+            chai.expect(server.getRequest()).to.match(
+                /\r\nuser-agent: remoteplay Windows\r\n/i,
             );
 
             const receiver = connection.receive()[
@@ -226,6 +238,39 @@ describe("Remote Play HTTP-agent handover", function httpAgentHandover() {
             if (connection) {
                 await connection.close();
             }
+            await server.close();
+        }
+    });
+
+    it("rejects a truncated HTTP response and cleans up the agent", async () => {
+        const { device, credentials } = fixture();
+        const destroyAgent = sinon.spy(http.Agent.prototype, "destroy");
+
+        const server = await startConsole(
+            "HTTP/1.1 200 OK\r\n"
+            + "RP-Server-Type: AA==",
+            true,
+        );
+
+        try {
+            sinon.stub(protocol, "urlWith").callsFake((_device, path) => (
+                `http://127.0.0.1:${server.port}${path}`
+            ));
+
+            let error: Error | undefined;
+
+            try {
+                await receiveWithin(openSession(device, {}, credentials));
+            } catch (caught) {
+                error = caught as Error;
+            }
+
+            chai.expect(error).to.be.instanceOf(Error);
+            chai.expect(error?.message).not.to.equal("Binary response timeout");
+            chai.expect(destroyAgent.calledOnce).to.equal(true);
+
+            await receiveWithin(server.whenClientClosed());
+        } finally {
             await server.close();
         }
     });
