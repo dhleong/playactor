@@ -168,10 +168,9 @@ function requestControlSocket(
                 }
 
                 try {
+                    // Disable the HTTP request timeout before handing over the socket.
                     stream.setTimeout(0);
 
-                    // agentRemove detached this socket from the agent.
-                    // Destroying the agent must not close the handed-over socket.
                     agent.destroy();
 
                     finished = true;
