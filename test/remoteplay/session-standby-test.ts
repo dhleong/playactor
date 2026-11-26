@@ -1,5 +1,5 @@
 import * as chai from "chai";
-import { Duplex } from "stream";
+import net from "net";
 import sinon from "sinon";
 
 import { RemotePlayDeviceConnection } from "../../src/connection/remoteplay";
@@ -22,45 +22,96 @@ chai.should();
 const REGIST_KEY = "00112233445566778899aabbccddeeff";
 
 /**
- * A control socket for a console that never answers the login request,
- * like a PS5 showing the "not turned off properly" dialog.
+ * A local console that accepts the HTTP control handshake but never
+ * acknowledges Login, as on the PS5 recovery screen.
  */
-class SilentControlSocket extends Duplex {
-    public readonly written: Buffer[] = [];
+async function startSilentConsole(serverType: string) {
+    const commands: number[] = [];
+    const sockets = new Set<net.Socket>();
 
-    public get commands() {
-        return this.written
-            .filter(data => data.length >= 8)
-            .map(data => data.readUInt16BE(4));
+    const server = net.createServer(socket => {
+        sockets.add(socket);
+        socket.setNoDelay(true);
+        socket.on("error", () => {});
+        socket.on("close", () => sockets.delete(socket));
+
+        let buffer = Buffer.alloc(0);
+        let requestComplete = false;
+        let closing = false;
+
+        socket.on("data", data => {
+            buffer = Buffer.concat([buffer, data]);
+
+            if (!requestComplete) {
+                const end = buffer.indexOf("\r\n\r\n");
+
+                if (end === -1) {
+                    return;
+                }
+
+                requestComplete = true;
+                buffer = buffer.slice(end + 4);
+
+                socket.write(
+                    "HTTP/1.1 200 OK\r\n"
+                    + "Content-Length: 0\r\n"
+                    + "Connection: keep-alive\r\n"
+                    + `RP-Server-Type: ${serverType}\r\n\r\n`,
+                );
+            }
+
+            while (buffer.length >= 8) {
+                const length = buffer.readUInt32BE(0);
+
+                if (buffer.length < 8 + length) {
+                    return;
+                }
+
+                const command = buffer.readUInt16BE(4);
+                commands.push(command);
+                buffer = buffer.slice(8 + length);
+
+                if (!closing) {
+                    closing = true;
+
+                    if (command === RemotePlayCommand.Standby) {
+                        // The console closes as it enters Rest Mode.
+                        setTimeout(() => socket.end(), 10);
+                    } else {
+                        // Unexpected Login is never acknowledged.
+                        setTimeout(() => socket.destroy(), 10);
+                    }
+                }
+            }
+        });
+    });
+
+    await new Promise<void>((resolve, reject) => {
+        server.once("error", reject);
+
+        server.listen(0, "127.0.0.1", () => {
+            server.removeListener("error", reject);
+            resolve();
+        });
+    });
+
+    const address = server.address();
+
+    if (!address || typeof address === "string") {
+        throw new Error("Invalid local test server address");
     }
 
-    // eslint-disable-next-line no-underscore-dangle
-    public _read() {
-        // the console pushes data from the test
-    }
+    return {
+        port: address.port,
+        commands,
+        close: async () => {
+            sockets.forEach(socket => socket.destroy());
 
-    // eslint-disable-next-line no-underscore-dangle
-    public _write(
-        data: Buffer,
-        _encoding: BufferEncoding,
-        callback: (error?: Error | null) => void,
-    ) {
-        this.written.push(Buffer.from(data));
-        callback();
-
-        if (data.readUInt16BE(4) === RemotePlayCommand.Standby) {
-            // the console closes the connection as it goes to rest
-            setImmediate(() => this.push(null));
-        }
-    }
-
-    public ref() {
-        return this;
-    }
-
-    public unref() {
-        return this;
-    }
+            await new Promise<void>(resolve => {
+                server.close(() => resolve());
+            });
+        },
+    };
 }
 
 describe("Remote Play session", () => {
@@ -102,24 +153,35 @@ describe("Remote Play session", () => {
             nonce,
         );
         const serverType = serverCodec.encodeBuffer(Buffer.alloc(16, 0));
-        const socket = new SilentControlSocket();
+        const console = await startSilentConsole(
+            serverType.toString("base64"),
+        );
 
-        const request = sinon.stub(protocol, "request");
-        request.onFirstCall().resolves({
-            headers: { "rp-nonce": nonce.toString("base64") },
-            request: { socket },
-        } as any);
-        request.onSecondCall().resolves({
-            headers: { "rp-server-type": serverType.toString("base64") },
-            request: { socket },
-        } as any);
+        try {
+            // Initialisation still uses the existing protocol.request API.
+            sinon.stub(protocol, "request").resolves({
+                headers: { "rp-nonce": nonce.toString("base64") },
+            } as any);
 
-        const session = await openSession(device, {
-            intent: ConnectionIntent.STANDBY,
-        }, creds);
-        await new RemotePlayDeviceConnection(session).standby();
+            // Only the control request uses native http.request.
+            sinon.stub(protocol, "urlWith").callsFake((_device, path) => (
+                `http://127.0.0.1:${console.port}${path}`
+            ));
 
-        // Must not have sent Login:
-        socket.commands.should.deep.equal([RemotePlayCommand.Standby]);
+            const session = await openSession(device, {
+                intent: ConnectionIntent.STANDBY,
+            }, creds);
+
+            try {
+                await new RemotePlayDeviceConnection(session).standby();
+            } finally {
+                await session.close();
+            }
+
+            // Must not have sent Login:
+            console.commands.should.deep.equal([RemotePlayCommand.Standby]);
+        } finally {
+            await console.close();
+        }
     });
 });

@@ -1,10 +1,12 @@
 import _debug from "debug";
 import http from "http";
+import net from "net";
 
 import { IRemotePlayCredentials } from "../credentials/model";
 import { ConnectionIntent, IConnectionConfig } from "../device/model";
 import { IDiscoveredDevice } from "../discovery/model";
 import { TcpDeviceSocket } from "../socket/tcp";
+import { delayMillis } from "../util/async";
 import { RemotePlayPacketCodec } from "./codec";
 import { pickCryptoStrategyForDevice } from "./crypto";
 import { RemotePlayVersion, remotePlayVersionFor, remotePlayVersionToString } from "./model";
@@ -23,6 +25,7 @@ const DID_PREFIX = Buffer.from([
 ]);
 const DID_SUFFIX = Buffer.from([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
 const OS_TYPE = "Win10.0.0";
+const CONTROL_TIMEOUT_MS = 30_000;
 
 /**
  * Step 1: initialize the session and fetch the "server nonce" value
@@ -70,6 +73,128 @@ function urlFor(device: IDiscoveredDevice) {
         : typedPath(device, "/sie/:type/rp/sess/ctrl");
 
     return urlWith(device, path);
+}
+
+interface IControlHandshake {
+    socket: net.Socket;
+    serverType: string;
+}
+
+/**
+ * Complete the HTTP control handshake and return a paused socket.
+ * The caller becomes responsible for the socket after handover.
+ */
+function requestControlSocket(
+    url: string,
+    headers: Record<string, string>,
+): Promise<IControlHandshake> {
+    const agent = new http.Agent({
+        keepAlive: true,
+        maxSockets: 1,
+    });
+
+    return new Promise<IControlHandshake>((resolve, reject) => {
+        let stream: net.Socket | undefined;
+        let finished = false;
+
+        const controlRequest = http.request(url, {
+            method: "GET",
+            agent,
+            headers: {
+                "User-Agent": "remoteplay Windows",
+                Connection: "keep-alive",
+                ...headers,
+                "Content-Length": "0",
+            },
+        });
+
+        function fail(error: Error) {
+            if (finished) {
+                return;
+            }
+
+            finished = true;
+            controlRequest.destroy();
+            stream?.destroy();
+            agent.destroy();
+            reject(error);
+        }
+
+        controlRequest.once("socket", socket => {
+            stream = socket;
+            socket.emit("agentRemove");
+        });
+
+        controlRequest.once("response", response => {
+            if (response.statusCode !== 200) {
+                fail(new Error(
+                    `Remote Play control HTTP ${response.statusCode}`,
+                ));
+                return;
+            }
+
+            const serverType = response.headers["rp-server-type"];
+
+            if (typeof serverType !== "string") {
+                fail(new Error("Missing Remote Play RP-Server-Type header"));
+                return;
+            }
+
+            if (response.headers["content-length"] !== "0") {
+                fail(new Error("Unexpected Remote Play HTTP response framing"));
+                return;
+            }
+
+            response.once("error", fail);
+            response.on("data", () => {
+                fail(new Error("Unexpected HTTP control response body"));
+            });
+
+            response.once("end", () => {
+                if (finished) {
+                    return;
+                }
+
+                if (!stream || stream.destroyed) {
+                    fail(new Error("Control socket closed before handover"));
+                    return;
+                }
+
+                stream.pause();
+
+                if (stream.listenerCount("data") !== 0) {
+                    fail(new Error("HTTP parser still owns the control socket"));
+                    return;
+                }
+
+                try {
+                    // Disable the HTTP request timeout before handing over the socket.
+                    stream.setTimeout(0);
+
+                    agent.destroy();
+
+                    finished = true;
+                    resolve({ socket: stream, serverType });
+                } catch (error) {
+                    fail(error instanceof Error
+                        ? error
+                        : new Error(String(error)));
+                }
+            });
+
+            response.resume();
+        });
+
+        controlRequest.once("error", fail);
+
+        controlRequest.setTimeout(CONTROL_TIMEOUT_MS, () => {
+            fail(new Error(
+                "Timed out waiting for the Remote Play control response",
+            ));
+        });
+
+        controlRequest.end();
+    });
 }
 
 async function openControlSocket(
@@ -120,43 +245,32 @@ async function openControlSocket(
         headers["RP-StreamingType"] = encrypt(typeBuffer);
     }
 
-    const agent = new http.Agent({
-        keepAlive: true,
-        timeout: 30_000,
-    });
-
-    debug("sending session control request...");
-    const response = await request(urlFor(device), {
-        agent: {
-            http: agent,
-        },
+    const { socket, serverType } = await requestControlSocket(
+        urlFor(device),
         headers,
-    });
+    );
 
-    function decrypt(map: http.IncomingHttpHeaders, name: string) {
-        const value = map[name];
-        if (typeof value !== "string") {
-            throw new Error(`Missing required response header ${name}`);
-        }
+    try {
+        const serverTypeDecoded = codec.decodeBuffer(
+            Buffer.from(serverType, "base64"),
+        );
 
-        return codec.decodeBuffer(Buffer.from(value, "base64"));
+        debug("received server type=", serverTypeDecoded);
+
+        const connection = new TcpDeviceSocket(
+            device,
+            RemotePlayDeviceProtocol,
+            socket,
+            { refSocket: true },
+            codec,
+        );
+
+        socket.resume();
+        return connection;
+    } catch (error) {
+        socket.destroy();
+        throw error;
     }
-
-    const serverType = decrypt(response.headers, "rp-server-type");
-    debug("received server type=", serverType);
-
-    // NOTE: response.socket SHOULD never be null, per its typing and documentation,
-    // but apparently it can be on at least Node v14+. request.socket seems to work
-    // on these versions, but is explicitly typed as optional.
-    const socket = response.request.socket ?? response.socket;
-
-    // take ownership of the socket
-    socket.removeAllListeners();
-    socket.ref();
-
-    return new TcpDeviceSocket(device, RemotePlayDeviceProtocol, socket, {
-        refSocket: true,
-    }, codec);
 }
 
 export async function openSession(
@@ -165,6 +279,8 @@ export async function openSession(
     creds: IRemotePlayCredentials,
 ) {
     const nonce = await initializeSession(device, creds);
+    // Avoid racing the console immediately after session init.
+    await delayMillis(1);
     const socket = await openControlSocket(device, creds, nonce);
 
     // The console accepts Standby without a login, and it never answers
